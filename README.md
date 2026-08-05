@@ -1,16 +1,21 @@
 # Trade Jurnal
 
 Personal web app untuk catat & report jurnal trading harian.
-Stack: **React + Vite + TypeScript + Cloud Firestore**. Siap deploy ke **Vercel**.
+
+**Live:** [https://trade-jurnal-fikz.vercel.app](https://trade-jurnal-fikz.vercel.app)
+
+![Trade Jurnal — daily trading report](docs/screenshot.png)
+
+Stack: **React + Vite + TypeScript + Cloud Firestore**. Deploy di **Vercel**.
 
 ## Fitur
 
-- Input harian: equity awal, total entry, lost entry, profit entry, total profit hari itu
-- Auto-hitung **% kenaikan hari ini** `(profit / equity awal × 100)`
+- Modal awal diisi sekali; equity harian dihitung otomatis
+- Input harian: total entry, lost entry, profit entry, total profit hari itu
+- Auto-hitung **% kenaikan hari ini**
 - Summary: total profit selama ini, equity terkini, profit & win rate bulan ini
-- Filter **bulan** + pilih **tanggal**
-- Tabel riwayat harian per bulan
-- Equity awal otomatis disarankan dari equity akhir hari sebelumnya
+- Kalender P/L bulanan + total mingguan
+- Target harian **10%** & stop loss **7,5%**
 - Tanpa login — langsung baca/tulis Firestore (personal use)
 
 ## Setup lokal
@@ -62,10 +67,12 @@ Document ID: `YYYY-MM-DD`
 }
 ```
 
+Modal awal disimpan di `daily_entries/_settings`.
+
 ## Deploy Vercel
 
 1. Push repo ke GitHub
-2. Import project di Vercel (root: folder `forex-journal` jika monorepo)
+2. Import project di Vercel
 3. Tambahkan environment variables sama seperti `.env` (`VITE_FIREBASE_*`)
 4. Deploy — build command: `npm run build`, output: `dist`
 
@@ -76,4 +83,3 @@ Document ID: `YYYY-MM-DD`
 | `npm run dev`     | Dev server lokal     |
 | `npm run build`   | Production build     |
 | `npm run preview` | Preview hasil build  |
-# trade_jurnal
