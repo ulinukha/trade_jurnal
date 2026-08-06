@@ -10,10 +10,9 @@ export interface DailyEntry {
   updatedAt?: string
 }
 
-/** Input harian tanpa equity — equity dihitung di service. */
+/** Input harian tanpa equity — equity & total trade dihitung di service. */
 export type DailyEntryInput = {
   date: string
-  totalEntries: number
   lostEntries: number
   profitEntries: number
   dailyProfit: number

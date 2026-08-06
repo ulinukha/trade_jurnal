@@ -141,6 +141,7 @@ export async function upsertEntry(input: DailyEntryInput): Promise<DailyEntry> {
   const existing = await getEntryByDate(input.date)
   const payload = {
     ...input,
+    totalEntries: input.lostEntries + input.profitEntries,
     startingEquity,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,

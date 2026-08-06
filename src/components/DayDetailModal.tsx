@@ -99,7 +99,7 @@ export function DayDetailModal({
                   </p>
                 </div>
                 <div>
-                  <p className="stat-label">Total entry</p>
+                  <p className="stat-label">Total trade</p>
                   <p className="guide-value">{entry.totalEntries}</p>
                 </div>
                 <div>

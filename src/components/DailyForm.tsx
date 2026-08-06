@@ -19,10 +19,16 @@ interface DailyFormProps {
 }
 
 const emptyForm = {
-  totalEntries: '',
   lostEntries: '',
   profitEntries: '',
   dailyProfit: '',
+}
+
+function parseCount(raw: string): number | null {
+  if (raw === '') return null
+  const n = Number(raw)
+  if (Number.isNaN(n) || n < 0 || !Number.isInteger(n)) return null
+  return n
 }
 
 export function DailyForm({
@@ -44,7 +50,6 @@ export function DailyForm({
   useEffect(() => {
     if (existing) {
       setForm({
-        totalEntries: String(existing.totalEntries),
         lostEntries: String(existing.lostEntries),
         profitEntries: String(existing.profitEntries),
         dailyProfit: formatAmountInput(existing.dailyProfit),
@@ -74,21 +79,12 @@ export function DailyForm({
       return
     }
 
-    const totalEntries = Number(form.totalEntries)
-    const lostEntries = Number(form.lostEntries)
-    const profitEntries = Number(form.profitEntries)
+    const lostEntries = parseCount(form.lostEntries)
+    const profitEntries = parseCount(form.profitEntries)
     const dailyProfit = parseAmountInput(form.dailyProfit)
 
-    if (
-      [totalEntries, lostEntries, profitEntries].some(
-        (n) => Number.isNaN(n) || n < 0 || !Number.isInteger(n),
-      )
-    ) {
-      setError('Jumlah entry harus bilangan bulat ≥ 0.')
-      return
-    }
-    if (lostEntries + profitEntries > totalEntries) {
-      setError('Lost + profit entry tidak boleh melebihi total entry.')
+    if (lostEntries === null || profitEntries === null) {
+      setError('Jumlah lost & profit entry harus bilangan bulat ≥ 0.')
       return
     }
     if (dailyProfit === null) {
@@ -98,7 +94,6 @@ export function DailyForm({
 
     await onSave({
       date: selectedDate,
-      totalEntries,
       lostEntries,
       profitEntries,
       dailyProfit,
@@ -126,6 +121,10 @@ export function DailyForm({
   }
 
   const liveProfit = parseAmountInput(form.dailyProfit)
+  const lostCount = parseCount(form.lostEntries)
+  const profitCount = parseCount(form.profitEntries)
+  const totalTrades =
+    lostCount !== null && profitCount !== null ? lostCount + profitCount : null
 
   const previewPct =
     dayEquity && liveProfit !== null
@@ -172,18 +171,6 @@ export function DailyForm({
       <form className="daily-form" onSubmit={handleSubmit}>
         <div className="field-row">
           <label className="field">
-            <span>Total entry</span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={form.totalEntries}
-              onChange={(e) => update('totalEntries', e.target.value)}
-              placeholder="0"
-              required
-            />
-          </label>
-          <label className="field">
             <span>Lost entry</span>
             <input
               type="number"
@@ -208,6 +195,12 @@ export function DailyForm({
             />
           </label>
         </div>
+
+        {totalTrades !== null && (
+          <p className="equity-readonly trade-total">
+            Total trade: <strong>{totalTrades}</strong>
+          </p>
+        )}
 
         <label className="field">
           <span>Total profit hari ini (Rp)</span>

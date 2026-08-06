@@ -12,7 +12,7 @@ export function AmountInput({
   value,
   onChange,
   allowNegative = false,
-  inputMode = 'numeric',
+  inputMode = 'decimal',
   ...props
 }: AmountInputProps) {
   return (
