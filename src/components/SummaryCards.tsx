@@ -1,17 +1,20 @@
 import {
   calcDailyMetrics,
   calcPeriodSummary,
+  calcAccountEquity,
+  calcTotalWithdraw,
   formatCurrency,
   formatNumber,
   formatPercent,
 } from '../utils/calc'
-import type { DailyEntry } from '../types/journal'
+import type { DailyEntry, Withdrawal } from '../types/journal'
 
 interface SummaryCardsProps {
   monthEntries: DailyEntry[]
   allEntries: DailyEntry[]
   selectedEntry: DailyEntry | null
   initialEquity: number | null
+  withdrawals: Withdrawal[]
 }
 
 function Stat({
@@ -39,14 +42,16 @@ export function SummaryCards({
   allEntries,
   selectedEntry,
   initialEquity,
+  withdrawals,
 }: SummaryCardsProps) {
   const month = calcPeriodSummary(monthEntries)
   const allTime = calcPeriodSummary(allEntries)
   const day = selectedEntry ? calcDailyMetrics(selectedEntry) : null
+  const totalWithdraw = calcTotalWithdraw(withdrawals)
 
   const currentEquity =
     initialEquity !== null
-      ? initialEquity + allTime.totalProfit
+      ? calcAccountEquity(initialEquity, allTime.totalProfit, totalWithdraw)
       : null
 
   return (
@@ -58,13 +63,15 @@ export function SummaryCards({
         sub={`${allTime.tradingDays} hari trading`}
       />
       <Stat
-        label="Equity terkini"
+        label="Equity di akun"
         value={currentEquity !== null ? formatCurrency(currentEquity) : '—'}
         tone="neutral"
         sub={
-          initialEquity !== null
-            ? `Modal awal ${formatCurrency(initialEquity)}`
-            : 'Belum set modal awal'
+          totalWithdraw > 0
+            ? `Withdraw −${formatCurrency(totalWithdraw)}`
+            : initialEquity !== null
+              ? `Modal awal ${formatCurrency(initialEquity)}`
+              : 'Belum set modal awal'
         }
       />
       <Stat

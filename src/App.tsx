@@ -19,7 +19,13 @@ import {
   saveInitialEquity,
   upsertEntry,
 } from './services/journal'
-import type { DailyEntry, DailyEntryInput } from './types/journal'
+import {
+  addWithdrawal,
+  deleteWithdrawal,
+  getAllWithdrawals,
+  getWithdrawalsByMonth,
+} from './services/withdrawals'
+import type { DailyEntry, DailyEntryInput, Withdrawal } from './types/journal'
 import './App.css'
 
 function todayStr() {
@@ -35,6 +41,8 @@ export default function App() {
   const [monthValue, setMonthValue] = useState(monthFromDate(todayStr()))
   const [monthEntries, setMonthEntries] = useState<DailyEntry[]>([])
   const [allEntries, setAllEntries] = useState<DailyEntry[]>([])
+  const [allWithdrawals, setAllWithdrawals] = useState<Withdrawal[]>([])
+  const [monthWithdrawals, setMonthWithdrawals] = useState<Withdrawal[]>([])
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null)
   const [dayEquity, setDayEquity] = useState<number | null>(null)
   const [initialEquity, setInitialEquity] = useState<number | null>(null)
@@ -60,14 +68,19 @@ export default function App() {
       setInitialEquity(settings?.initialEquity ?? null)
 
       const [y, m] = month.split('-').map(Number)
-      const [monthData, allData, dayData, equity] = await Promise.all([
-        getEntriesByMonth(y, m),
-        getAllEntries(),
-        getEntryByDate(date),
-        resolveStartingEquity(date),
-      ])
+      const [monthData, allData, allWithdrawData, monthWithdrawData, dayData, equity] =
+        await Promise.all([
+          getEntriesByMonth(y, m),
+          getAllEntries(),
+          getAllWithdrawals(),
+          getWithdrawalsByMonth(y, m),
+          getEntryByDate(date),
+          resolveStartingEquity(date),
+        ])
       setMonthEntries(monthData)
       setAllEntries(allData)
+      setAllWithdrawals(allWithdrawData)
+      setMonthWithdrawals(monthWithdrawData)
       setSelectedEntry(dayData)
       setDayEquity(equity)
     } catch (err) {
@@ -134,6 +147,43 @@ export default function App() {
     }
   }
 
+  async function handleAddWithdraw(input: {
+    date: string
+    amount: number
+    note?: string
+  }) {
+    setSaving(true)
+    setError('')
+    try {
+      await addWithdrawal(input)
+      await loadData(selectedDate, monthValue)
+    } catch (err) {
+      console.error(err)
+      const detail =
+        err instanceof Error
+          ? err.message
+          : 'Cek rules Firestore untuk collection withdrawals.'
+      setError(`Gagal menyimpan withdraw. ${detail}`)
+      throw err
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDeleteWithdraw(id: string) {
+    setSaving(true)
+    setError('')
+    try {
+      await deleteWithdrawal(id)
+      await loadData(selectedDate, monthValue)
+    } catch (err) {
+      console.error(err)
+      setError('Gagal menghapus withdraw.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleSave(input: DailyEntryInput) {
     setSaving(true)
     setError('')
@@ -187,6 +237,8 @@ export default function App() {
     allEntries.find((e) => e.date === selectedDate) ??
     selectedEntry
 
+  const detailWithdrawals = allWithdrawals.filter((w) => w.date === selectedDate)
+
   const detailEquity =
     initialEquity === null
       ? null
@@ -214,8 +266,11 @@ export default function App() {
         <>
           <InitialEquitySetup
             initialEquity={initialEquity}
+            withdrawals={allWithdrawals}
             saving={saving}
             onSave={handleSaveInitialEquity}
+            onAddWithdraw={handleAddWithdraw}
+            onDeleteWithdraw={handleDeleteWithdraw}
           />
 
           <SummaryCards
@@ -223,11 +278,13 @@ export default function App() {
             allEntries={allEntries}
             selectedEntry={selectedEntry}
             initialEquity={initialEquity}
+            withdrawals={allWithdrawals}
           />
 
           <MonthCalendar
             monthValue={monthValue}
             entries={monthEntries}
+            withdrawals={monthWithdrawals}
             selectedDate={selectedDate}
             onSelectDate={handleCalendarSelect}
             onMonthChange={handleMonthChange}
@@ -258,6 +315,7 @@ export default function App() {
             <DayDetailModal
               date={selectedDate}
               entry={detailEntry}
+              dayWithdrawals={detailWithdrawals}
               dayEquity={detailEquity}
               onClose={() => setDetailOpen(false)}
               onEdit={handleEditFromModal}

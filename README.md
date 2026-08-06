@@ -16,6 +16,7 @@ Stack: **React + Vite + TypeScript + Cloud Firestore**. Deploy di **Vercel**.
 - Summary: total profit selama ini, equity terkini, profit & win rate bulan ini
 - Kalender P/L bulanan + total mingguan
 - Target harian **10%** & stop loss **7,5%**
+- **Withdraw** kapan saja — mengurangi equity di akun, tidak mengubah stat trading
 - Tanpa login — langsung baca/tulis Firestore (personal use)
 
 ## Setup lokal
@@ -41,6 +42,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /daily_entries/{docId} {
+      allow read, write: if true;
+    }
+    match /withdrawals/{docId} {
       allow read, write: if true;
     }
   }

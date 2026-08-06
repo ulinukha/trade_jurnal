@@ -1,4 +1,9 @@
-import type { DailyEntry, DailyMetrics, PeriodSummary } from '../types/journal'
+import type {
+  DailyEntry,
+  DailyMetrics,
+  PeriodSummary,
+  Withdrawal,
+} from '../types/journal'
 
 export function calcDailyMetrics(entry: DailyEntry): DailyMetrics {
   const endingEquity = entry.startingEquity + entry.dailyProfit
@@ -71,6 +76,29 @@ export function formatNumber(value: number): string {
 }
 
 /** Compact P/L for calendar cells: Rp157.000 / -Rp120.000 */
+export function calcTotalWithdraw(withdrawals: Withdrawal[]): number {
+  return withdrawals.reduce((sum, w) => sum + w.amount, 0)
+}
+
+/** Equity di akun setelah profit trading & withdraw. */
+export function calcAccountEquity(
+  initialEquity: number,
+  totalProfit: number,
+  totalWithdraw: number,
+): number {
+  return initialEquity + totalProfit - totalWithdraw
+}
+
+export function withdrawTotalByDate(
+  withdrawals: Withdrawal[],
+): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const w of withdrawals) {
+    map.set(w.date, (map.get(w.date) ?? 0) + w.amount)
+  }
+  return map
+}
+
 export function formatPnL(value: number): string {
   const abs = new Intl.NumberFormat('id-ID', {
     style: 'currency',

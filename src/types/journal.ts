@@ -24,6 +24,16 @@ export interface AppSettings {
   updatedAt?: string
 }
 
+export interface Withdrawal {
+  id: string
+  date: string // YYYY-MM-DD
+  amount: number
+  note?: string
+  createdAt?: string
+}
+
+export type WithdrawalInput = Omit<Withdrawal, 'id' | 'createdAt'>
+
 export interface DailyMetrics {
   endingEquity: number
   dailyReturnPct: number

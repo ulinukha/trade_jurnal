@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import type { DailyEntry, DailyEntryInput } from '../types/journal'
+import { formatAmountInput, parseAmountInput } from '../utils/amountInput'
 import { formatCurrency } from '../utils/calc'
+import { AmountInput } from './AmountInput'
 
 interface DailyFormProps {
   selectedDate: string
@@ -45,7 +47,7 @@ export function DailyForm({
         totalEntries: String(existing.totalEntries),
         lostEntries: String(existing.lostEntries),
         profitEntries: String(existing.profitEntries),
-        dailyProfit: String(existing.dailyProfit),
+        dailyProfit: formatAmountInput(existing.dailyProfit),
       })
     } else {
       setForm(emptyForm)
@@ -55,10 +57,7 @@ export function DailyForm({
   }, [existing, selectedDate])
 
   useEffect(() => {
-    const profit =
-      form.dailyProfit === '' || Number.isNaN(Number(form.dailyProfit))
-        ? null
-        : Number(form.dailyProfit)
+    const profit = parseAmountInput(form.dailyProfit)
     onDraftProfitChange?.(profit)
   }, [form.dailyProfit, onDraftProfitChange])
 
@@ -78,7 +77,7 @@ export function DailyForm({
     const totalEntries = Number(form.totalEntries)
     const lostEntries = Number(form.lostEntries)
     const profitEntries = Number(form.profitEntries)
-    const dailyProfit = Number(form.dailyProfit)
+    const dailyProfit = parseAmountInput(form.dailyProfit)
 
     if (
       [totalEntries, lostEntries, profitEntries].some(
@@ -92,7 +91,7 @@ export function DailyForm({
       setError('Lost + profit entry tidak boleh melebihi total entry.')
       return
     }
-    if (Number.isNaN(dailyProfit)) {
+    if (dailyProfit === null) {
       setError('Total profit hari ini tidak valid.')
       return
     }
@@ -126,10 +125,7 @@ export function DailyForm({
     }
   }
 
-  const liveProfit =
-    form.dailyProfit === '' || Number.isNaN(Number(form.dailyProfit))
-      ? null
-      : Number(form.dailyProfit)
+  const liveProfit = parseAmountInput(form.dailyProfit)
 
   const previewPct =
     dayEquity && liveProfit !== null
@@ -215,11 +211,10 @@ export function DailyForm({
 
         <label className="field">
           <span>Total profit hari ini (Rp)</span>
-          <input
-            type="number"
-            step="any"
+          <AmountInput
+            allowNegative
             value={form.dailyProfit}
-            onChange={(e) => update('dailyProfit', e.target.value)}
+            onChange={(value) => update('dailyProfit', value)}
             placeholder="0"
             required
           />

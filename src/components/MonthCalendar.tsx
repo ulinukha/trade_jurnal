@@ -7,13 +7,14 @@ import {
   formatPercent,
   formatPnL,
 } from '../utils/calc'
-import type { DailyEntry } from '../types/journal'
+import type { DailyEntry, Withdrawal } from '../types/journal'
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
 interface MonthCalendarProps {
   monthValue: string
   entries: DailyEntry[]
+  withdrawals: Withdrawal[]
   selectedDate: string
   onSelectDate: (date: string) => void
   onMonthChange: (month: string) => void
@@ -46,13 +47,14 @@ const MONTH_VALUES = new Set(MONTH_OPTIONS.map((o) => o.value))
 export function MonthCalendar({
   monthValue,
   entries,
+  withdrawals,
   selectedDate,
   onSelectDate,
   onMonthChange,
   onToday,
 }: MonthCalendarProps) {
   const [year, month] = monthValue.split('-').map(Number)
-  const weeks = buildMonthWeeks(year, month, entries)
+  const weeks = buildMonthWeeks(year, month, entries, withdrawals)
   const monthProfit = calcPeriodSummary(entries).totalProfit
 
   const hasCurrent = MONTH_OPTIONS.some((o) => o.value === monthValue)
@@ -153,16 +155,21 @@ export function MonthCalendar({
               const entry = day.entry
               const profit = entry?.dailyProfit
               const hasEntry = Boolean(entry)
+              const hasWithdraw = day.withdrawTotal > 0
               const pct = entry ? calcDailyMetrics(entry).dailyReturnPct : null
               const tone = day.isWeekend
-                ? 'weekend'
-                : !hasEntry
-                  ? 'empty'
-                  : profit! > 0
+                ? hasWithdraw
+                  ? 'withdraw'
+                  : 'weekend'
+                : hasEntry
+                  ? profit! > 0
                     ? 'profit'
                     : profit! < 0
                       ? 'loss'
                       : 'flat'
+                  : hasWithdraw
+                    ? 'withdraw'
+                    : 'empty'
               const selected = day.date === selectedDate
 
               return (
@@ -180,6 +187,8 @@ export function MonthCalendar({
                       <span className="day-pnl">{formatPnL(profit!)}</span>
                       <span className="day-pct">{formatPercent(pct)}</span>
                     </>
+                  ) : hasWithdraw ? (
+                    <span className="day-pnl">{formatPnL(-day.withdrawTotal)}</span>
                   ) : (
                     <span className="day-empty-label">—</span>
                   )}

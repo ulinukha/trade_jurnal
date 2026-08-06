@@ -142,6 +142,120 @@ input {
   background: linear-gradient(180deg, #f3fbf7 0%, #eef7f2 100%);
 }
 
+.withdraw-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.withdraw-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  background: #eef2f5;
+}
+
+.withdraw-list.compact li {
+  background: transparent;
+  padding: 0.35rem 0;
+}
+
+.withdraw-date {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.withdraw-amount {
+  font-family: var(--mono);
+  font-weight: 650;
+  font-size: 0.95rem;
+}
+
+.withdraw-note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.withdraw-delete {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 6px;
+}
+
+.withdraw-delete:hover {
+  background: #fdecea;
+  color: var(--down);
+}
+
+.withdraw-modal .withdraw-form {
+  margin-bottom: 0;
+}
+
+.withdraw-history {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.withdraw-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.withdraw-history-total {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.withdraw-history-list {
+  max-height: min(220px, 40vh);
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.capital-header-compact {
+  margin-bottom: 0;
+}
+
+.btn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.modal-withdraws {
+  margin: 0 0 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
 .form-date-field {
   margin-bottom: 0.9rem;
 }
@@ -427,6 +541,15 @@ input {
   cursor: default;
 }
 
+.day-cell.withdraw {
+  background: linear-gradient(180deg, #2a3a4a 0%, #1f2a35 100%);
+}
+
+.day-cell.withdraw .day-pnl {
+  color: #a8c8e8;
+  font-size: clamp(0.82rem, 1.4vw, 1rem);
+}
+
 .day-cell.weekend .day-num {
   color: rgba(196, 138, 143, 0.85);
 }
@@ -597,6 +720,13 @@ input {
   align-items: start;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.panel-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .panel-header h2 {
