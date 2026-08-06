@@ -2,8 +2,6 @@
 
 Personal web app untuk catat & report jurnal trading harian.
 
-**Live:** [https://trade-jurnal-fikz.vercel.app](https://trade-jurnal-fikz.vercel.app)
-
 ![Trade Jurnal — daily trading report](docs/screenshot.png)
 
 Stack: **React + Vite + TypeScript + Cloud Firestore**. Deploy di **Vercel**.
