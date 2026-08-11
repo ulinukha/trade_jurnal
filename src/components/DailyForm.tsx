@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import type { DailyEntry, DailyEntryInput } from '../types/journal'
 import { formatAmountInput, parseAmountInput } from '../utils/amountInput'
 import { formatCurrency } from '../utils/calc'
+import { isFutureDate, todayStr } from '../utils/date'
 import { AmountInput } from './AmountInput'
 
 interface DailyFormProps {
@@ -79,6 +80,11 @@ export function DailyForm({
       return
     }
 
+    if (isFutureDate(selectedDate)) {
+      setError('Tanggal di masa depan tidak bisa diisi.')
+      return
+    }
+
     const lostEntries = parseCount(form.lostEntries)
     const profitEntries = parseCount(form.profitEntries)
     const dailyProfit = parseAmountInput(form.dailyProfit)
@@ -109,6 +115,10 @@ export function DailyForm({
 
   async function handleMove() {
     if (!existing || moveDate === selectedDate) return
+    if (isFutureDate(moveDate)) {
+      setError('Tidak bisa pindah ke tanggal di masa depan.')
+      return
+    }
     const ok = window.confirm(
       `Pindahkan data dari ${selectedDate} ke ${moveDate}?`,
     )
@@ -125,6 +135,8 @@ export function DailyForm({
   const profitCount = parseCount(form.profitEntries)
   const totalTrades =
     lostCount !== null && profitCount !== null ? lostCount + profitCount : null
+  const today = todayStr()
+  const futureLocked = isFutureDate(selectedDate, today)
 
   const previewPct =
     dayEquity && liveProfit !== null
@@ -145,14 +157,21 @@ export function DailyForm({
         <span>Tanggal</span>
         <input
           type="date"
+          max={today}
           value={existing ? moveDate : selectedDate}
           onChange={(e) => {
+            const next = e.target.value
+            if (isFutureDate(next, today)) {
+              setError('Tanggal di masa depan tidak bisa dipilih.')
+              return
+            }
             if (existing) {
-              setMoveDate(e.target.value)
+              setMoveDate(next)
             } else {
-              onSelectDate(e.target.value)
+              onSelectDate(next)
             }
           }}
+          disabled={futureLocked}
         />
         {existing && moveDate !== selectedDate && (
           <small className="hint">
@@ -160,6 +179,12 @@ export function DailyForm({
           </small>
         )}
       </label>
+
+      {futureLocked && (
+        <p className="form-error">
+          Tanggal di masa depan tidak bisa diubah.
+        </p>
+      )}
 
       {dayEquity !== null && (
         <p className="equity-readonly">
@@ -180,6 +205,7 @@ export function DailyForm({
               onChange={(e) => update('lostEntries', e.target.value)}
               placeholder="0"
               required
+              disabled={futureLocked}
             />
           </label>
           <label className="field">
@@ -192,6 +218,7 @@ export function DailyForm({
               onChange={(e) => update('profitEntries', e.target.value)}
               placeholder="0"
               required
+              disabled={futureLocked}
             />
           </label>
         </div>
@@ -210,6 +237,7 @@ export function DailyForm({
             onChange={(value) => update('dailyProfit', value)}
             placeholder="0"
             required
+            disabled={futureLocked}
           />
           {previewPct !== null && !Number.isNaN(previewPct) && (
             <small className={`hint ${previewPct >= 0 ? 'up' : 'down'}`}>
@@ -225,7 +253,7 @@ export function DailyForm({
           <button
             type="submit"
             className="btn primary"
-            disabled={saving || !hasInitialEquity}
+            disabled={saving || !hasInitialEquity || futureLocked}
           >
             {saving ? 'Menyimpan…' : existing ? 'Update' : 'Simpan'}
           </button>
@@ -234,7 +262,7 @@ export function DailyForm({
               type="button"
               className="btn ghost"
               onClick={() => void handleMove()}
-              disabled={saving}
+              disabled={saving || futureLocked}
             >
               Pindah tanggal
             </button>
@@ -244,7 +272,7 @@ export function DailyForm({
               type="button"
               className="btn ghost danger"
               onClick={() => void handleDelete()}
-              disabled={saving}
+              disabled={saving || futureLocked}
             >
               Hapus
             </button>

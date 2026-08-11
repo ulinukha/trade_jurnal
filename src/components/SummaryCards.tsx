@@ -2,6 +2,7 @@ import {
   calcDailyMetrics,
   calcPeriodSummary,
   calcAccountEquity,
+  calcEquityGrowthPct,
   calcTotalWithdraw,
   formatCurrency,
   formatNumber,
@@ -54,13 +55,22 @@ export function SummaryCards({
       ? calcAccountEquity(initialEquity, allTime.totalProfit, totalWithdraw)
       : null
 
+  const equityGrowthPct =
+    initialEquity !== null
+      ? calcEquityGrowthPct(initialEquity, allTime.totalProfit, totalWithdraw)
+      : null
+
   return (
     <section className="summary-grid">
       <Stat
         label="Total profit selama ini"
         value={formatCurrency(allTime.totalProfit)}
         tone={allTime.totalProfit >= 0 ? 'up' : 'down'}
-        sub={`${allTime.tradingDays} hari trading`}
+        sub={
+          equityGrowthPct !== null
+            ? `${formatPercent(equityGrowthPct)} dari modal · ${allTime.tradingDays} hari`
+            : `${allTime.tradingDays} hari trading`
+        }
       />
       <Stat
         label="Equity di akun"

@@ -233,6 +233,7 @@ input {
 
 .capital-header-compact {
   margin-bottom: 0;
+  align-items: center;
 }
 
 .btn-badge {
@@ -540,6 +541,17 @@ input {
   background: #24303a;
 }
 
+.day-cell.future,
+.day-cell.future:hover {
+  cursor: not-allowed;
+  opacity: 0.42;
+  filter: none;
+}
+
+.day-cell.future:disabled {
+  pointer-events: none;
+}
+
 .day-cell.weekend {
   background: linear-gradient(180deg, #3a2a2e 0%, #2a1f22 100%);
   cursor: default;
@@ -718,6 +730,19 @@ input {
   backdrop-filter: blur(8px);
 }
 
+.panel.capital-panel:not(.highlight) {
+  padding: 0.65rem 1.25rem 0.35rem;
+}
+
+.panel.capital-panel:not(.highlight) .capital-header-compact h2 {
+  margin: 0.08rem 0 0;
+  line-height: 1.1;
+}
+
+.panel.capital-panel:not(.highlight) .capital-header-compact .eyebrow {
+  line-height: 1.1;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;
@@ -734,7 +759,7 @@ input {
 }
 
 .panel-header h2 {
-  margin: 0.2rem 0 0;
+  margin: 0.15rem 0 0;
   font-size: 1.15rem;
   letter-spacing: -0.02em;
 }

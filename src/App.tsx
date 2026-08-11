@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { format } from 'date-fns'
 import { DailyForm } from './components/DailyForm'
 import { DayDetailModal } from './components/DayDetailModal'
 import { DayGuideCard } from './components/DayGuideCard'
@@ -26,11 +25,8 @@ import {
   getWithdrawalsByMonth,
 } from './services/withdrawals'
 import type { DailyEntry, DailyEntryInput, Withdrawal } from './types/journal'
+import { isFutureDate, todayStr } from './utils/date'
 import './App.css'
-
-function todayStr() {
-  return format(new Date(), 'yyyy-MM-dd')
-}
 
 function monthFromDate(date: string) {
   return date.slice(0, 7)
@@ -105,6 +101,7 @@ export default function App() {
   }
 
   function handleCalendarSelect(date: string) {
+    if (isFutureDate(date)) return
     handleDateChange(date)
     setDetailOpen(true)
   }

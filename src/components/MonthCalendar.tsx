@@ -7,6 +7,7 @@ import {
   formatPercent,
   formatPnL,
 } from '../utils/calc'
+import { isFutureDate, todayStr } from '../utils/date'
 import type { DailyEntry, Withdrawal } from '../types/journal'
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
@@ -56,6 +57,7 @@ export function MonthCalendar({
   const [year, month] = monthValue.split('-').map(Number)
   const weeks = buildMonthWeeks(year, month, entries, withdrawals)
   const monthProfit = calcPeriodSummary(entries).totalProfit
+  const today = todayStr()
 
   const hasCurrent = MONTH_OPTIONS.some((o) => o.value === monthValue)
   const selectOptions = hasCurrent
@@ -171,23 +173,34 @@ export function MonthCalendar({
                     ? 'withdraw'
                     : 'empty'
               const selected = day.date === selectedDate
+              const future = isFutureDate(day.date, today)
 
               return (
                 <button
                   key={day.date}
                   type="button"
                   role="gridcell"
-                  className={`day-cell ${tone} ${selected ? 'selected' : ''}`}
-                  onClick={() => onSelectDate(day.date)}
-                  title={day.isWeekend ? 'Weekend — stop trade' : undefined}
+                  className={`day-cell ${tone} ${selected ? 'selected' : ''} ${future ? 'future' : ''}`}
+                  onClick={() => {
+                    if (future) return
+                    onSelectDate(day.date)
+                  }}
+                  disabled={future}
+                  title={
+                    future
+                      ? 'Tanggal belum tiba — tidak bisa diubah'
+                      : day.isWeekend
+                        ? 'Weekend — stop trade'
+                        : undefined
+                  }
                 >
                   <span className="day-num">{day.dayNumber}</span>
-                  {hasEntry && pct !== null ? (
+                  {!future && hasEntry && pct !== null ? (
                     <>
                       <span className="day-pnl">{formatPnL(profit!)}</span>
                       <span className="day-pct">{formatPercent(pct)}</span>
                     </>
-                  ) : hasWithdraw ? (
+                  ) : !future && hasWithdraw ? (
                     <span className="day-pnl">{formatPnL(-day.withdrawTotal)}</span>
                   ) : (
                     <span className="day-empty-label">—</span>

@@ -132,6 +132,16 @@ export async function resolveStartingEquity(
 }
 
 export async function upsertEntry(input: DailyEntryInput): Promise<DailyEntry> {
+  const today = new Date()
+  const todayStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
+  if (input.date > todayStr) {
+    throw new Error('Tanggal di masa depan tidak bisa diisi.')
+  }
+
   const startingEquity = await resolveStartingEquity(input.date)
   if (startingEquity === null) {
     throw new Error('Modal awal belum diisi.')
@@ -162,6 +172,16 @@ export async function moveEntry(
 ): Promise<DailyEntry> {
   if (fromDate === toDate) {
     throw new Error('Tanggal tujuan sama dengan tanggal asal.')
+  }
+
+  const today = new Date()
+  const todayStr = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, '0'),
+    String(today.getDate()).padStart(2, '0'),
+  ].join('-')
+  if (toDate > todayStr) {
+    throw new Error('Tidak bisa pindah ke tanggal di masa depan.')
   }
 
   const source = await getEntryByDate(fromDate)

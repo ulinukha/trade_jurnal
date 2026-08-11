@@ -89,6 +89,17 @@ export function calcAccountEquity(
   return initialEquity + totalProfit - totalWithdraw
 }
 
+/** % kenaikan equity di akun vs modal awal (termasuk efek withdraw). */
+export function calcEquityGrowthPct(
+  initialEquity: number,
+  totalProfit: number,
+  totalWithdraw: number,
+): number {
+  if (initialEquity === 0) return 0
+  const equity = calcAccountEquity(initialEquity, totalProfit, totalWithdraw)
+  return ((equity - initialEquity) / initialEquity) * 100
+}
+
 export function withdrawTotalByDate(
   withdrawals: Withdrawal[],
 ): Map<string, number> {
