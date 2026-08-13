@@ -1,7 +1,7 @@
 export interface DailyEntry {
   id: string // YYYY-MM-DD
   date: string // YYYY-MM-DD
-  startingEquity: number // dihitung otomatis dari modal awal + profit sebelumnya
+  startingEquity: number // modal awal + profit sebelumnya + WD/deposit s.d. tanggal itu
   totalEntries: number
   lostEntries: number
   profitEntries: number

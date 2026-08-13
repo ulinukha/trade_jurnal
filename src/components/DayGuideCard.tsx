@@ -49,7 +49,7 @@ export function DayGuideCard({
 
       <div className="guide-stats">
         <div>
-          <p className="stat-label">Equity acuan (hari sebelumnya)</p>
+          <p className="stat-label">Saldo acuan</p>
           <p className="guide-value">{formatCurrency(guide.baseEquity)}</p>
         </div>
         <div>

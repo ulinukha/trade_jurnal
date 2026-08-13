@@ -101,6 +101,23 @@ export function calcNetCashflow(withdrawals: Withdrawal[]): number {
   return withdrawals.reduce((sum, w) => sum + cashflowSigned(w), 0)
 }
 
+/** Saldo acuan di tanggal tertentu: modal + profit sebelumnya + cashflow s.d. tanggal itu. */
+export function calcStartingEquity(
+  initialEquity: number,
+  entries: { date: string; dailyProfit: number }[],
+  withdrawals: Withdrawal[],
+  date: string,
+  excludeDate?: string,
+): number {
+  const priorProfit = entries
+    .filter((e) => e.date < date && e.date !== excludeDate)
+    .reduce((sum, e) => sum + e.dailyProfit, 0)
+  const cashflow = calcNetCashflow(
+    withdrawals.filter((w) => w.date <= date),
+  )
+  return initialEquity + priorProfit + cashflow
+}
+
 /** Equity di akun setelah profit trading, withdraw, dan deposit. */
 export function calcAccountEquity(
   initialEquity: number,

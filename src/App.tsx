@@ -14,7 +14,6 @@ import {
   getEntryByDate,
   moveEntry,
   recomputeAllStartingEquity,
-  resolveStartingEquity,
   saveInitialEquity,
   upsertEntry,
 } from './services/journal'
@@ -25,6 +24,7 @@ import {
   getWithdrawalsByMonth,
 } from './services/withdrawals'
 import type { DailyEntry, DailyEntryInput, Withdrawal, WithdrawalInput } from './types/journal'
+import { calcStartingEquity } from './utils/calc'
 import { isFutureDate, todayStr } from './utils/date'
 import './App.css'
 
@@ -40,7 +40,6 @@ export default function App() {
   const [allWithdrawals, setAllWithdrawals] = useState<Withdrawal[]>([])
   const [monthWithdrawals, setMonthWithdrawals] = useState<Withdrawal[]>([])
   const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null)
-  const [dayEquity, setDayEquity] = useState<number | null>(null)
   const [initialEquity, setInitialEquity] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,21 +63,19 @@ export default function App() {
       setInitialEquity(settings?.initialEquity ?? null)
 
       const [y, m] = month.split('-').map(Number)
-      const [monthData, allData, allWithdrawData, monthWithdrawData, dayData, equity] =
+      const [monthData, allData, allWithdrawData, monthWithdrawData, dayData] =
         await Promise.all([
           getEntriesByMonth(y, m),
           getAllEntries(),
           getAllWithdrawals(),
           getWithdrawalsByMonth(y, m),
           getEntryByDate(date),
-          resolveStartingEquity(date),
         ])
       setMonthEntries(monthData)
       setAllEntries(allData)
       setAllWithdrawals(allWithdrawData)
       setMonthWithdrawals(monthWithdrawData)
       setSelectedEntry(dayData)
-      setDayEquity(equity)
     } catch (err) {
       console.error(err)
       const detail =
@@ -152,6 +149,7 @@ export default function App() {
     setError('')
     try {
       await addWithdrawal(input)
+      await recomputeAllStartingEquity()
       await loadData(selectedDate, monthValue)
     } catch (err) {
       console.error(err)
@@ -171,6 +169,7 @@ export default function App() {
     setError('')
     try {
       await deleteWithdrawal(id)
+      await recomputeAllStartingEquity()
       await loadData(selectedDate, monthValue)
     } catch (err) {
       console.error(err)
@@ -230,20 +229,22 @@ export default function App() {
     ? null
     : (draftProfit ?? selectedEntry?.dailyProfit ?? null)
 
+  const dayEquity =
+    initialEquity === null
+      ? null
+      : calcStartingEquity(
+          initialEquity,
+          allEntries,
+          allWithdrawals,
+          selectedDate,
+        )
+
   const detailEntry =
     monthEntries.find((e) => e.date === selectedDate) ??
     allEntries.find((e) => e.date === selectedDate) ??
     selectedEntry
 
   const detailWithdrawals = allWithdrawals.filter((w) => w.date === selectedDate)
-
-  const detailEquity =
-    initialEquity === null
-      ? null
-      : initialEquity +
-        allEntries
-          .filter((e) => e.date < selectedDate)
-          .reduce((sum, e) => sum + e.dailyProfit, 0)
 
   return (
     <div className="app">
@@ -314,7 +315,7 @@ export default function App() {
               date={selectedDate}
               entry={detailEntry}
               dayWithdrawals={detailWithdrawals}
-              dayEquity={detailEquity}
+              dayEquity={dayEquity}
               onClose={() => setDetailOpen(false)}
               onEdit={handleEditFromModal}
             />

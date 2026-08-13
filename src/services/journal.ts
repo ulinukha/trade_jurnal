@@ -16,6 +16,8 @@ import type {
   DailyEntry,
   DailyEntryInput,
 } from '../types/journal'
+import { calcStartingEquity } from '../utils/calc'
+import { getAllWithdrawals } from './withdrawals'
 
 const COLLECTION = 'daily_entries'
 /** Disimpan di collection yang sama agar rules lama tetap jalan. */
@@ -115,7 +117,7 @@ export async function getAllEntries(): Promise<DailyEntry[]> {
     .map((d) => toEntry(d.id, d.data()))
 }
 
-/** Equity di tanggal tertentu = modal awal + total profit sebelum tanggal itu. */
+/** Equity di tanggal tertentu = modal awal + profit sebelumnya + WD/deposit s.d. tanggal itu. */
 export async function resolveStartingEquity(
   date: string,
   excludeDate?: string,
@@ -123,12 +125,18 @@ export async function resolveStartingEquity(
   const settings = await getSettings()
   if (!settings) return null
 
-  const all = await getAllEntries()
-  const priorProfit = all
-    .filter((e) => e.date < date && e.date !== excludeDate)
-    .reduce((sum, e) => sum + e.dailyProfit, 0)
+  const [all, withdrawals] = await Promise.all([
+    getAllEntries(),
+    getAllWithdrawals(),
+  ])
 
-  return settings.initialEquity + priorProfit
+  return calcStartingEquity(
+    settings.initialEquity,
+    all,
+    withdrawals,
+    date,
+    excludeDate,
+  )
 }
 
 export async function upsertEntry(input: DailyEntryInput): Promise<DailyEntry> {
@@ -223,10 +231,18 @@ export async function recomputeAllStartingEquity(): Promise<void> {
   const settings = await getSettings()
   if (!settings) return
 
-  const all = await getAllEntries()
-  let equity = settings.initialEquity
+  const [all, withdrawals] = await Promise.all([
+    getAllEntries(),
+    getAllWithdrawals(),
+  ])
 
   for (const entry of all) {
+    const equity = calcStartingEquity(
+      settings.initialEquity,
+      all,
+      withdrawals,
+      entry.date,
+    )
     const payload = {
       date: entry.date,
       startingEquity: equity,
@@ -238,6 +254,5 @@ export async function recomputeAllStartingEquity(): Promise<void> {
       updatedAt: new Date().toISOString(),
     }
     await setDoc(doc(requireDb(), COLLECTION, entry.date), payload)
-    equity += entry.dailyProfit
   }
 }
