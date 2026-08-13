@@ -8,7 +8,7 @@ import {
   startOfWeek,
 } from 'date-fns'
 import type { DailyEntry, Withdrawal } from '../types/journal'
-import { withdrawTotalByDate } from '../utils/calc'
+import { cashflowByDate } from '../utils/calc'
 
 export interface CalendarDay {
   date: string // YYYY-MM-DD
@@ -16,7 +16,8 @@ export interface CalendarDay {
   inMonth: boolean
   isWeekend: boolean
   entry: DailyEntry | null
-  withdrawTotal: number
+  /** Net cashflow hari itu: deposit +, withdraw −. */
+  cashflowNet: number
 }
 
 export interface CalendarWeek {
@@ -34,7 +35,7 @@ export function buildMonthWeeks(
   withdrawals: Withdrawal[] = [],
 ): CalendarWeek[] {
   const byDate = new Map(entries.map((e) => [e.date, e]))
-  const withdrawMap = withdrawTotalByDate(withdrawals)
+  const cashflowMap = cashflowByDate(withdrawals)
   const monthDate = new Date(year, month - 1, 1)
   const start = startOfWeek(startOfMonth(monthDate), { weekStartsOn: 0 })
   const end = endOfWeek(endOfMonth(monthDate), { weekStartsOn: 0 })
@@ -53,7 +54,7 @@ export function buildMonthWeeks(
         inMonth,
         isWeekend: dow === 0 || dow === 6,
         entry: inMonth ? (byDate.get(date) ?? null) : null,
-        withdrawTotal: inMonth ? (withdrawMap.get(date) ?? 0) : 0,
+        cashflowNet: inMonth ? (cashflowMap.get(date) ?? 0) : 0,
       }
     })
 

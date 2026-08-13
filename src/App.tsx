@@ -24,7 +24,7 @@ import {
   getAllWithdrawals,
   getWithdrawalsByMonth,
 } from './services/withdrawals'
-import type { DailyEntry, DailyEntryInput, Withdrawal } from './types/journal'
+import type { DailyEntry, DailyEntryInput, Withdrawal, WithdrawalInput } from './types/journal'
 import { isFutureDate, todayStr } from './utils/date'
 import './App.css'
 
@@ -144,11 +144,7 @@ export default function App() {
     }
   }
 
-  async function handleAddWithdraw(input: {
-    date: string
-    amount: number
-    note?: string
-  }) {
+  async function handleAddWithdraw(input: WithdrawalInput) {
     setSaving(true)
     setError('')
     try {
@@ -160,7 +156,7 @@ export default function App() {
         err instanceof Error
           ? err.message
           : 'Cek rules Firestore untuk collection withdrawals.'
-      setError(`Gagal menyimpan withdraw. ${detail}`)
+      setError(`Gagal menyimpan pergerakan saldo. ${detail}`)
       throw err
     } finally {
       setSaving(false)
@@ -175,7 +171,7 @@ export default function App() {
       await loadData(selectedDate, monthValue)
     } catch (err) {
       console.error(err)
-      setError('Gagal menghapus withdraw.')
+      setError('Gagal menghapus catatan saldo.')
     } finally {
       setSaving(false)
     }

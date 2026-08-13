@@ -1,9 +1,19 @@
 import type {
+  CashflowType,
   DailyEntry,
   DailyMetrics,
   PeriodSummary,
   Withdrawal,
 } from '../types/journal'
+
+export function cashflowType(w: { type?: CashflowType }): CashflowType {
+  return w.type === 'deposit' ? 'deposit' : 'withdraw'
+}
+
+/** Withdraw negatif, deposit positif. */
+export function cashflowSigned(w: Withdrawal): number {
+  return cashflowType(w) === 'deposit' ? w.amount : -w.amount
+}
 
 export function calcDailyMetrics(entry: DailyEntry): DailyMetrics {
   const endingEquity = entry.startingEquity + entry.dailyProfit
@@ -75,41 +85,61 @@ export function formatNumber(value: number): string {
   return new Intl.NumberFormat('id-ID').format(value)
 }
 
-/** Compact P/L for calendar cells: Rp157.000 / -Rp120.000 */
 export function calcTotalWithdraw(withdrawals: Withdrawal[]): number {
-  return withdrawals.reduce((sum, w) => sum + w.amount, 0)
+  return withdrawals
+    .filter((w) => cashflowType(w) === 'withdraw')
+    .reduce((sum, w) => sum + w.amount, 0)
 }
 
-/** Equity di akun setelah profit trading & withdraw. */
+export function calcTotalDeposit(withdrawals: Withdrawal[]): number {
+  return withdrawals
+    .filter((w) => cashflowType(w) === 'deposit')
+    .reduce((sum, w) => sum + w.amount, 0)
+}
+
+export function calcNetCashflow(withdrawals: Withdrawal[]): number {
+  return withdrawals.reduce((sum, w) => sum + cashflowSigned(w), 0)
+}
+
+/** Equity di akun setelah profit trading, withdraw, dan deposit. */
 export function calcAccountEquity(
   initialEquity: number,
   totalProfit: number,
   totalWithdraw: number,
+  totalDeposit = 0,
 ): number {
-  return initialEquity + totalProfit - totalWithdraw
+  return initialEquity + totalProfit - totalWithdraw + totalDeposit
 }
 
-/** % kenaikan equity di akun vs modal awal (termasuk efek withdraw). */
+/** % kenaikan equity di akun vs modal awal (termasuk efek WD / deposit). */
 export function calcEquityGrowthPct(
   initialEquity: number,
   totalProfit: number,
   totalWithdraw: number,
+  totalDeposit = 0,
 ): number {
   if (initialEquity === 0) return 0
-  const equity = calcAccountEquity(initialEquity, totalProfit, totalWithdraw)
+  const equity = calcAccountEquity(
+    initialEquity,
+    totalProfit,
+    totalWithdraw,
+    totalDeposit,
+  )
   return ((equity - initialEquity) / initialEquity) * 100
 }
 
-export function withdrawTotalByDate(
+/** Net cashflow per tanggal: deposit +, withdraw −. */
+export function cashflowByDate(
   withdrawals: Withdrawal[],
 ): Map<string, number> {
   const map = new Map<string, number>()
   for (const w of withdrawals) {
-    map.set(w.date, (map.get(w.date) ?? 0) + w.amount)
+    map.set(w.date, (map.get(w.date) ?? 0) + cashflowSigned(w))
   }
   return map
 }
 
+/** Compact P/L for calendar cells: Rp157.000 / -Rp120.000 */
 export function formatPnL(value: number): string {
   const abs = new Intl.NumberFormat('id-ID', {
     style: 'currency',

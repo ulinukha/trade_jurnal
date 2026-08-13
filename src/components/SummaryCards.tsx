@@ -3,6 +3,7 @@ import {
   calcPeriodSummary,
   calcAccountEquity,
   calcEquityGrowthPct,
+  calcTotalDeposit,
   calcTotalWithdraw,
   formatCurrency,
   formatNumber,
@@ -49,15 +50,26 @@ export function SummaryCards({
   const allTime = calcPeriodSummary(allEntries)
   const day = selectedEntry ? calcDailyMetrics(selectedEntry) : null
   const totalWithdraw = calcTotalWithdraw(withdrawals)
+  const totalDeposit = calcTotalDeposit(withdrawals)
 
   const currentEquity =
     initialEquity !== null
-      ? calcAccountEquity(initialEquity, allTime.totalProfit, totalWithdraw)
+      ? calcAccountEquity(
+          initialEquity,
+          allTime.totalProfit,
+          totalWithdraw,
+          totalDeposit,
+        )
       : null
 
   const equityGrowthPct =
     initialEquity !== null
-      ? calcEquityGrowthPct(initialEquity, allTime.totalProfit, totalWithdraw)
+      ? calcEquityGrowthPct(
+          initialEquity,
+          allTime.totalProfit,
+          totalWithdraw,
+          totalDeposit,
+        )
       : null
 
   return (
@@ -77,8 +89,17 @@ export function SummaryCards({
         value={currentEquity !== null ? formatCurrency(currentEquity) : '—'}
         tone="neutral"
         sub={
-          totalWithdraw > 0
-            ? `Withdraw −${formatCurrency(totalWithdraw)}`
+          totalWithdraw > 0 || totalDeposit > 0
+            ? [
+                totalWithdraw > 0
+                  ? `WD −${formatCurrency(totalWithdraw)}`
+                  : null,
+                totalDeposit > 0
+                  ? `Deposit +${formatCurrency(totalDeposit)}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')
             : initialEquity !== null
               ? `Modal awal ${formatCurrency(initialEquity)}`
               : 'Belum set modal awal'

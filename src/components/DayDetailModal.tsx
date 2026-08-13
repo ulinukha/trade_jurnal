@@ -3,6 +3,9 @@ import type { DailyEntry, Withdrawal } from '../types/journal'
 import {
   calcDailyMetrics,
   calcDayGuide,
+  calcNetCashflow,
+  cashflowSigned,
+  cashflowType,
   formatCurrency,
   formatPercent,
   formatPnL,
@@ -37,7 +40,7 @@ export function DayDetailModal({
 
   const metrics = entry ? calcDailyMetrics(entry) : null
   const guide = calcDayGuide(dayEquity, entry?.dailyProfit ?? null)
-  const withdrawTotal = dayWithdrawals.reduce((s, w) => s + w.amount, 0)
+  const cashflowNet = calcNetCashflow(dayWithdrawals)
   const hasData = Boolean(entry) || dayWithdrawals.length > 0
 
   return (
@@ -141,20 +144,33 @@ export function DayDetailModal({
 
             {dayWithdrawals.length > 0 && (
               <div className="modal-withdraws">
-                <p className="stat-label">Withdraw</p>
+                <p className="stat-label">Pergerakan saldo</p>
                 <ul className="withdraw-list compact">
-                  {dayWithdrawals.map((w) => (
-                    <li key={w.id}>
-                      <span className="withdraw-amount down">
-                        {formatPnL(-w.amount)}
-                      </span>
-                      {w.note && <span className="withdraw-note">{w.note}</span>}
-                    </li>
-                  ))}
+                  {dayWithdrawals.map((w) => {
+                    const signed = cashflowSigned(w)
+                    const kindLabel =
+                      cashflowType(w) === 'deposit' ? 'Tambah' : 'WD'
+                    return (
+                      <li key={w.id}>
+                        <span
+                          className={`withdraw-amount ${signed >= 0 ? 'up' : 'down'}`}
+                        >
+                          <span className="cashflow-chip">{kindLabel}</span>
+                          {signed >= 0 ? '+' : ''}
+                          {formatPnL(signed)}
+                        </span>
+                        {w.note && <span className="withdraw-note">{w.note}</span>}
+                      </li>
+                    )
+                  })}
                 </ul>
                 {dayWithdrawals.length > 1 && (
                   <p className="hint">
-                    Total withdraw: {formatPnL(-withdrawTotal)}
+                    Net:{' '}
+                    <span className={cashflowNet >= 0 ? 'up' : 'down'}>
+                      {cashflowNet > 0 ? '+' : ''}
+                      {formatPnL(cashflowNet)}
+                    </span>
                   </p>
                 )}
               </div>

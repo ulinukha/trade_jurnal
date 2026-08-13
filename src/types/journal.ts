@@ -23,10 +23,15 @@ export interface AppSettings {
   updatedAt?: string
 }
 
+/** Pergerakan dana di akun — terpisah dari P/L trading. */
+export type CashflowType = 'withdraw' | 'deposit'
+
 export interface Withdrawal {
   id: string
   date: string // YYYY-MM-DD
   amount: number
+  /** Record lama tanpa field ini dianggap withdraw. */
+  type: CashflowType
   note?: string
   createdAt?: string
 }

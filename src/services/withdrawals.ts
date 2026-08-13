@@ -26,6 +26,7 @@ function toWithdrawal(id: string, data: Record<string, unknown>): Withdrawal {
     id,
     date: String(data.date ?? ''),
     amount: Number(data.amount ?? 0),
+    type: data.type === 'deposit' ? 'deposit' : 'withdraw',
     note: data.note ? String(data.note) : undefined,
     createdAt: data.createdAt ? String(data.createdAt) : undefined,
   }
@@ -63,6 +64,7 @@ export async function addWithdrawal(input: WithdrawalInput): Promise<Withdrawal>
   const payload: Record<string, string | number> = {
     date: input.date,
     amount: input.amount,
+    type: input.type === 'deposit' ? 'deposit' : 'withdraw',
     createdAt: now,
   }
   if (input.note?.trim()) {
@@ -73,6 +75,7 @@ export async function addWithdrawal(input: WithdrawalInput): Promise<Withdrawal>
     id: ref.id,
     date: input.date,
     amount: input.amount,
+    type: input.type === 'deposit' ? 'deposit' : 'withdraw',
     note: input.note?.trim() || undefined,
     createdAt: now,
   }

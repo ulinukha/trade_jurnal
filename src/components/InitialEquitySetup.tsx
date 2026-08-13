@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { format } from 'date-fns'
-import type { Withdrawal } from '../types/journal'
+import type { Withdrawal, WithdrawalInput } from '../types/journal'
 import { formatAmountInput, parseAmountInput } from '../utils/amountInput'
 import { formatCurrency } from '../utils/calc'
 import { WithdrawModal } from './WithdrawModal'
@@ -11,11 +11,7 @@ interface InitialEquitySetupProps {
   withdrawals: Withdrawal[]
   saving: boolean
   onSave: (value: number) => Promise<void>
-  onAddWithdraw: (input: {
-    date: string
-    amount: number
-    note?: string
-  }) => Promise<void>
+  onAddWithdraw: (input: WithdrawalInput) => Promise<void>
   onDeleteWithdraw: (id: string) => Promise<void>
 }
 
@@ -61,7 +57,7 @@ export function InitialEquitySetup({
                 className="btn primary"
                 onClick={() => setWithdrawOpen(true)}
               >
-                Withdraw
+                Saldo
                 {withdrawals.length > 0 && (
                   <span className="btn-badge">{withdrawals.length}</span>
                 )}

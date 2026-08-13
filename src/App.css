@@ -225,6 +225,64 @@ input {
   font-weight: 650;
 }
 
+.withdraw-history-breakdown {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.cashflow-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background: #eef2f5;
+}
+
+.cashflow-toggle-btn {
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.cashflow-toggle-btn.active {
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(20, 32, 40, 0.08);
+}
+
+.cashflow-toggle-btn.active.down {
+  color: var(--down);
+}
+
+.cashflow-toggle-btn.active.up {
+  color: var(--up);
+}
+
+.cashflow-chip {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  background: #e4eaee;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: 1px;
+}
+
+.withdraw-amount .cashflow-chip {
+  margin-left: 0;
+  margin-right: 0.4rem;
+}
+
 .withdraw-history-list {
   max-height: min(220px, 40vh);
   overflow-y: auto;
@@ -563,6 +621,15 @@ input {
 
 .day-cell.withdraw .day-pnl {
   color: #a8c8e8;
+  font-size: clamp(0.82rem, 1.4vw, 1rem);
+}
+
+.day-cell.deposit {
+  background: linear-gradient(180deg, #1f3a32 0%, #1a2e28 100%);
+}
+
+.day-cell.deposit .day-pnl {
+  color: #9dceb8;
   font-size: clamp(0.82rem, 1.4vw, 1rem);
 }
 

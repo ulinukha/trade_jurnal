@@ -157,11 +157,13 @@ export function MonthCalendar({
               const entry = day.entry
               const profit = entry?.dailyProfit
               const hasEntry = Boolean(entry)
-              const hasWithdraw = day.withdrawTotal > 0
+              const cashflowNet = day.cashflowNet
+              const hasCashflow = cashflowNet !== 0
               const pct = entry ? calcDailyMetrics(entry).dailyReturnPct : null
+              const cashflowTone = cashflowNet > 0 ? 'deposit' : 'withdraw'
               const tone = day.isWeekend
-                ? hasWithdraw
-                  ? 'withdraw'
+                ? hasCashflow
+                  ? cashflowTone
                   : 'weekend'
                 : hasEntry
                   ? profit! > 0
@@ -169,8 +171,8 @@ export function MonthCalendar({
                     : profit! < 0
                       ? 'loss'
                       : 'flat'
-                  : hasWithdraw
-                    ? 'withdraw'
+                  : hasCashflow
+                    ? cashflowTone
                     : 'empty'
               const selected = day.date === selectedDate
               const future = isFutureDate(day.date, today)
@@ -200,8 +202,11 @@ export function MonthCalendar({
                       <span className="day-pnl">{formatPnL(profit!)}</span>
                       <span className="day-pct">{formatPercent(pct)}</span>
                     </>
-                  ) : !future && hasWithdraw ? (
-                    <span className="day-pnl">{formatPnL(-day.withdrawTotal)}</span>
+                  ) : !future && hasCashflow ? (
+                    <span className="day-pnl">
+                      {cashflowNet > 0 ? '+' : ''}
+                      {formatPnL(cashflowNet)}
+                    </span>
                   ) : (
                     <span className="day-empty-label">—</span>
                   )}
