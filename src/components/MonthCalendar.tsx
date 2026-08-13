@@ -26,7 +26,7 @@ function buildMonthOptions(): { value: string; label: string }[] {
   const options: { value: string; label: string }[] = []
   const now = new Date()
   const start = new Date(2026, 0, 1) // Januari 2026
-  const end = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
   for (
     let d = new Date(start);
@@ -183,14 +183,10 @@ export function MonthCalendar({
                   type="button"
                   role="gridcell"
                   className={`day-cell ${tone} ${selected ? 'selected' : ''} ${future ? 'future' : ''}`}
-                  onClick={() => {
-                    if (future) return
-                    onSelectDate(day.date)
-                  }}
-                  disabled={future}
+                  onClick={() => onSelectDate(day.date)}
                   title={
                     future
-                      ? 'Tanggal belum tiba — tidak bisa diubah'
+                      ? 'Lihat panduan — catatan trading belum bisa diisi'
                       : day.isWeekend
                         ? 'Weekend — stop trade'
                         : undefined

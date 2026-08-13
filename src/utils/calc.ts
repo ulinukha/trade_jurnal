@@ -73,7 +73,7 @@ export function formatCurrency(value: number): string {
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value)
+  }).format(Math.trunc(value))
 }
 
 export function formatPercent(value: number): string {
@@ -146,7 +146,7 @@ export function formatPnL(value: number): string {
     currency: 'IDR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(Math.abs(value))
+  }).format(Math.trunc(Math.abs(value)))
   if (value < 0) return `-${abs}`
   return abs
 }

@@ -166,9 +166,7 @@ export function WithdrawModal({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={
-                isDeposit
-                  ? 'Balikin saldo setelah news'
-                  : 'Parkir saldo high-impact news'
+                isDeposit ? 'Alasan tambah saldo' : 'Alasan tarik saldo'
               }
             />
           </label>

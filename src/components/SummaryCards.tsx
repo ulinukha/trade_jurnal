@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import {
   calcDailyMetrics,
   calcPeriodSummary,
@@ -28,13 +29,13 @@ function Stat({
   label: string
   value: string
   tone?: 'up' | 'down' | 'neutral'
-  sub?: string
+  sub?: ReactNode
 }) {
   return (
     <article className={`stat ${tone ?? 'neutral'}`}>
       <p className="stat-label">{label}</p>
       <p className="stat-value">{value}</p>
-      {sub && <p className="stat-sub">{sub}</p>}
+      {sub && <div className="stat-sub">{sub}</div>}
     </article>
   )
 }
@@ -89,20 +90,20 @@ export function SummaryCards({
         value={currentEquity !== null ? formatCurrency(currentEquity) : '—'}
         tone="neutral"
         sub={
-          totalWithdraw > 0 || totalDeposit > 0
-            ? [
-                totalWithdraw > 0
-                  ? `WD −${formatCurrency(totalWithdraw)}`
-                  : null,
-                totalDeposit > 0
-                  ? `Deposit +${formatCurrency(totalDeposit)}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')
-            : initialEquity !== null
-              ? `Modal awal ${formatCurrency(initialEquity)}`
-              : 'Belum set modal awal'
+          totalWithdraw > 0 || totalDeposit > 0 ? (
+            <>
+              {totalWithdraw > 0 && (
+                <span>WD: −{formatCurrency(totalWithdraw)}</span>
+              )}
+              {totalDeposit > 0 && (
+                <span>Deposit: +{formatCurrency(totalDeposit)}</span>
+              )}
+            </>
+          ) : initialEquity !== null ? (
+            `Modal awal ${formatCurrency(initialEquity)}`
+          ) : (
+            'Belum set modal awal'
+          )
         }
       />
       <Stat

@@ -379,6 +379,9 @@ input {
 }
 
 .stat-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
   margin: 0.3rem 0 0;
   font-size: 0.82rem;
   color: var(--muted);
@@ -599,15 +602,17 @@ input {
   background: #24303a;
 }
 
-.day-cell.future,
-.day-cell.future:hover {
-  cursor: not-allowed;
-  opacity: 0.42;
-  filter: none;
+.day-cell.future {
+  opacity: 0.5;
 }
 
-.day-cell.future:disabled {
-  pointer-events: none;
+.day-cell.future:hover {
+  opacity: 0.78;
+  filter: brightness(1.08);
+}
+
+.day-cell.future.selected {
+  opacity: 1;
 }
 
 .day-cell.weekend {

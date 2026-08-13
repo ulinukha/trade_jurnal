@@ -101,8 +101,11 @@ export default function App() {
   }
 
   function handleCalendarSelect(date: string) {
-    if (isFutureDate(date)) return
     handleDateChange(date)
+    if (isFutureDate(date)) {
+      setDetailOpen(false)
+      return
+    }
     setDetailOpen(true)
   }
 
@@ -223,7 +226,9 @@ export default function App() {
     }
   }
 
-  const dailyProfit = draftProfit ?? selectedEntry?.dailyProfit ?? null
+  const dailyProfit = isFutureDate(selectedDate)
+    ? null
+    : (draftProfit ?? selectedEntry?.dailyProfit ?? null)
 
   const detailEntry =
     monthEntries.find((e) => e.date === selectedDate) ??

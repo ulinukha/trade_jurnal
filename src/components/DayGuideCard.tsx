@@ -1,3 +1,4 @@
+import { isFutureDate } from '../utils/date'
 import {
   calcDayGuide,
   formatCurrency,
@@ -18,14 +19,15 @@ export function DayGuideCard({
   dailyProfit,
 }: DayGuideCardProps) {
   const guide = calcDayGuide(baseEquity, dailyProfit)
+  const upcoming = isFutureDate(selectedDate)
 
   if (!guide) {
     return (
       <section className="panel guide-panel">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Panduan hari ini</p>
-            <h2>{selectedDate}</h2>
+            <p className="eyebrow">Panduan harian</p>
+            <h2>{selectedDate.replaceAll('-', '/')}</h2>
           </div>
         </div>
         <p className="empty">
@@ -40,8 +42,8 @@ export function DayGuideCard({
     <section className={`panel guide-panel ${guide.shouldStop ? 'danger' : ''}`}>
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Panduan hari ini</p>
-          <h2>{selectedDate}</h2>
+            <p className="eyebrow">Panduan harian</p>
+          <h2>{selectedDate.replaceAll('-', '/')}</h2>
         </div>
       </div>
 
@@ -95,9 +97,11 @@ export function DayGuideCard({
         </div>
       ) : (
         <div className="guide-alert ok">
-          <strong>Masih dalam batas aman.</strong>
+          <strong>
+            {upcoming ? 'Rencana hari ini.' : 'Masih dalam batas aman.'}
+          </strong>
           <span>
-            Target hari ini {formatCurrency(guide.targetProfit)}.{' '}
+            Target {formatCurrency(guide.targetProfit)}.{' '}
             <span className="down">
               Stop jika loss mencapai {formatCurrency(guide.stopLossAmount)}.
             </span>

@@ -26,7 +26,7 @@ const emptyForm = {
 }
 
 function parseCount(raw: string): number | null {
-  if (raw === '') return null
+  if (raw.trim() === '') return 0
   const n = Number(raw)
   if (Number.isNaN(n) || n < 0 || !Number.isInteger(n)) return null
   return n
@@ -157,12 +157,12 @@ export function DailyForm({
         <span>Tanggal</span>
         <input
           type="date"
-          max={today}
+          max={existing ? today : undefined}
           value={existing ? moveDate : selectedDate}
           onChange={(e) => {
             const next = e.target.value
-            if (isFutureDate(next, today)) {
-              setError('Tanggal di masa depan tidak bisa dipilih.')
+            if (existing && isFutureDate(next, today)) {
+              setError('Tidak bisa pindah ke tanggal di masa depan.')
               return
             }
             if (existing) {
@@ -171,7 +171,6 @@ export function DailyForm({
               onSelectDate(next)
             }
           }}
-          disabled={futureLocked}
         />
         {existing && moveDate !== selectedDate && (
           <small className="hint">
@@ -181,8 +180,9 @@ export function DailyForm({
       </label>
 
       {futureLocked && (
-        <p className="form-error">
-          Tanggal di masa depan tidak bisa diubah.
+        <p className="hint">
+          Tanggal ini belum tiba. Panduan target & stop loss bisa dilihat;
+          catatan trading baru bisa diisi setelah harinya masuk.
         </p>
       )}
 
@@ -203,8 +203,10 @@ export function DailyForm({
               step="1"
               value={form.lostEntries}
               onChange={(e) => update('lostEntries', e.target.value)}
+              onBlur={() => {
+                if (form.lostEntries.trim() === '') update('lostEntries', '0')
+              }}
               placeholder="0"
-              required
               disabled={futureLocked}
             />
           </label>
@@ -216,8 +218,11 @@ export function DailyForm({
               step="1"
               value={form.profitEntries}
               onChange={(e) => update('profitEntries', e.target.value)}
+              onBlur={() => {
+                if (form.profitEntries.trim() === '')
+                  update('profitEntries', '0')
+              }}
               placeholder="0"
-              required
               disabled={futureLocked}
             />
           </label>
