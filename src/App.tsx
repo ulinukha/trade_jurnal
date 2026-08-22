@@ -152,13 +152,6 @@ export default function App() {
     }
   }
 
-  function handleToday() {
-    const t = todayStr()
-    setSelectedDate(t)
-    setMonthValue(monthFromDate(t))
-    setDetailOpen(true)
-  }
-
   function openNewTrade(pair?: string) {
     setEditingTrade(null)
     setPrefillPair(pair ?? '')
@@ -314,7 +307,6 @@ export default function App() {
               onPairFilter={setPairFilter}
               onSelectDate={handleCalendarSelect}
               onMonthChange={handleMonthChange}
-              onToday={handleToday}
             />
           </div>
 

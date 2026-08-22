@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { enUS } from 'date-fns/locale'
 import { buildMonthWeeks, shiftMonth } from '../utils/calendar'
@@ -9,7 +10,8 @@ import {
 import { isFutureDate, todayStr } from '../utils/date'
 import type { DailyEntry, Withdrawal } from '../types/journal'
 
-const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
+const WEEKDAYS_ALL = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const WEEKDAYS_HIDE = ['MON', 'TUE', 'WED', 'THU', 'FRI']
 
 interface MonthCalendarProps {
   monthValue: string
@@ -21,7 +23,6 @@ interface MonthCalendarProps {
   onPairFilter: (pair: string) => void
   onSelectDate: (date: string) => void
   onMonthChange: (month: string) => void
-  onToday: () => void
 }
 
 function buildMonthOptions(): { value: string; label: string }[] {
@@ -47,6 +48,43 @@ function buildMonthOptions(): { value: string; label: string }[] {
 const MONTH_OPTIONS = buildMonthOptions()
 const MONTH_VALUES = new Set(MONTH_OPTIONS.map((o) => o.value))
 
+function IconCalendar() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect
+        x="3.5"
+        y="5"
+        width="17"
+        height="15.5"
+        rx="2.5"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        d="M8 3.5v3.5M16 3.5v3.5M3.5 10h17"
+      />
+      <path
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"
+      />
+    </svg>
+  )
+}
+
+function formatDayPct(value: number): string {
+  return `${Math.round(Math.abs(value))}%`
+}
+
+function dayReturnPct(entry: DailyEntry): number | null {
+  if (!entry.startingEquity) return null
+  return (entry.dailyProfit / entry.startingEquity) * 100
+}
+
 export function MonthCalendar({
   monthValue,
   entries,
@@ -57,27 +95,18 @@ export function MonthCalendar({
   onPairFilter,
   onSelectDate,
   onMonthChange,
-  onToday,
 }: MonthCalendarProps) {
+  const [hideWeekend, setHideWeekend] = useState(true)
   const [year, month] = monthValue.split('-').map(Number)
   const weeks = buildMonthWeeks(year, month, entries, withdrawals)
   const summary = calcPeriodSummary(entries)
   const today = todayStr()
   const winDays = entries.filter((e) => e.dailyProfit > 0).length
   const lossDays = entries.filter((e) => e.dailyProfit < 0).length
-
-  const hasCurrent = MONTH_OPTIONS.some((o) => o.value === monthValue)
-  const selectOptions = hasCurrent
-    ? MONTH_OPTIONS
-    : [
-        {
-          value: monthValue,
-          label: format(new Date(year, month - 1, 1), 'MMMM yyyy', {
-            locale: enUS,
-          }),
-        },
-        ...MONTH_OPTIONS,
-      ]
+  const weekdays = hideWeekend ? WEEKDAYS_HIDE : WEEKDAYS_ALL
+  const monthLabel = format(new Date(year, month - 1, 1), 'MMMM yyyy', {
+    locale: enUS,
+  })
 
   const prevMonth = shiftMonth(monthValue, -1)
   const nextMonth = shiftMonth(monthValue, 1)
@@ -87,93 +116,102 @@ export function MonthCalendar({
   return (
     <section className="calendar-panel">
       <div className="calendar-toolbar">
-        <div>
-          <p className="eyebrow">Daily PnL</p>
-          <h2>Calendar</h2>
+        <div className="calendar-title-row">
+          <span className="calendar-icon" aria-hidden>
+            <IconCalendar />
+          </span>
+          <div>
+            <h2>Daily PnL Calendar</h2>
+            <p className="hint">MT5 Closed Deals History</p>
+          </div>
         </div>
-        <div className="calendar-nav">
-          <select
-            className="cal-filter"
-            value={pairFilter}
-            onChange={(e) => onPairFilter(e.target.value)}
-            aria-label="Filter pair"
-          >
-            <option value="all">All symbols</option>
-            {pairs.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-          <button type="button" className="cal-btn" onClick={onToday}>
-            Today
-          </button>
+        <label className="cal-hide-weekend">
+          <input
+            type="checkbox"
+            checked={hideWeekend}
+            onChange={(e) => setHideWeekend(e.target.checked)}
+          />
+          Hide Weekend
+        </label>
+      </div>
+
+      <div className="calendar-controls">
+        <select
+          className="cal-filter"
+          value={pairFilter}
+          onChange={(e) => onPairFilter(e.target.value)}
+          aria-label="Filter pair"
+        >
+          <option value="all">All Symbols</option>
+          {pairs.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+
+        <div className="calendar-month-nav">
           <button
             type="button"
-            className="cal-btn icon"
+            className="cal-nav-btn"
             aria-label="Previous month"
             disabled={!canPrev}
             onClick={() => onMonthChange(prevMonth)}
           >
             ‹
           </button>
+          <span className="cal-month-label">{monthLabel}</span>
           <button
             type="button"
-            className="cal-btn icon"
+            className="cal-nav-btn"
             aria-label="Next month"
             disabled={!canNext}
             onClick={() => onMonthChange(nextMonth)}
           >
             ›
           </button>
-          <label className="cal-month-select">
-            <span className="sr-only">Select month</span>
-            <select
-              value={monthValue}
-              onChange={(e) => onMonthChange(e.target.value)}
-              aria-label="Select month"
-            >
-              {selectOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
         </div>
       </div>
 
       <div className="calendar-stats">
-        <div>
+        <div className="cal-stat">
           <span>Month PnL</span>
           <strong className={summary.totalProfit >= 0 ? 'up' : 'down'}>
             {formatPnL(summary.totalProfit)}
           </strong>
         </div>
-        <div>
-          <span>Day W/L</span>
-          <strong>
-            {winDays}/{lossDays}
+        <div className="cal-stat">
+          <span>Day P/L</span>
+          <strong className="cal-stat-split">
+            <em className="up">{winDays}d</em>
+            <i>/</i>
+            <em className="down">{lossDays}d</em>
           </strong>
         </div>
-        <div>
-          <span>Pos W/L</span>
-          <strong>
-            {formatNumber(summary.totalWins)}/{formatNumber(summary.totalLosses)}
+        <div className="cal-stat">
+          <span>Pos P/L</span>
+          <strong className="cal-stat-split">
+            <em className="up">{formatNumber(summary.totalWins)}</em>
+            <i>/</i>
+            <em className="down">{formatNumber(summary.totalLosses)}</em>
           </strong>
         </div>
-        <div>
+        <div className="cal-stat">
           <span>Deals</span>
           <strong>{formatNumber(summary.totalEntries)}</strong>
         </div>
       </div>
 
-      <div className="calendar-grid" role="grid" aria-label="Trading calendar">
+      <div
+        className={`calendar-grid ${hideWeekend ? 'hide-weekend' : ''}`}
+        role="grid"
+        aria-label="Trading calendar"
+      >
         <div className="calendar-head" role="row">
-          {WEEKDAYS.map((d) => (
+          {weekdays.map((d) => (
             <div
               key={d}
-              className="calendar-head-cell"
+              className={`calendar-head-cell ${d === 'SUN' || d === 'SAT' ? 'weekend' : ''}`}
               role="columnheader"
             >
               {d}
@@ -184,11 +222,22 @@ export function MonthCalendar({
           </div>
         </div>
 
-        {weeks.map((week, wi) => (
-          <div key={wi} className="calendar-row" role="row">
-            {week.days
-              .filter((day) => !day.isWeekend)
-              .map((day) => {
+        {weeks.map((week, wi) => {
+          const visibleDays = hideWeekend
+            ? week.days.filter((day) => !day.isWeekend)
+            : week.days
+          const hasWeekData = week.totalTrades > 0
+          const weekTone = !hasWeekData
+            ? 'empty'
+            : week.totalProfit > 0
+              ? 'profit'
+              : week.totalProfit < 0
+                ? 'loss'
+                : 'flat'
+
+          return (
+            <div key={wi} className="calendar-row" role="row">
+              {visibleDays.map((day) => {
                 if (!day.inMonth) {
                   return (
                     <div
@@ -224,6 +273,7 @@ export function MonthCalendar({
                       : 'empty'
                 const selected = day.date === selectedDate
                 const future = isFutureDate(day.date, today)
+                const dayPct = entry ? dayReturnPct(entry) : null
 
                 return (
                   <button
@@ -237,32 +287,42 @@ export function MonthCalendar({
                     {!future && hasEntry ? (
                       <>
                         <span className="day-pnl">{formatPnL(profit!)}</span>
-                        <span className="day-trades">
-                          {entry!.totalEntries}x
-                        </span>
+                        {dayPct != null && (
+                          <span className="day-pct">{formatDayPct(dayPct)}</span>
+                        )}
                       </>
                     ) : !future && hasCashflow ? (
                       <span className="day-pnl">
                         {cashflowNet > 0 ? '+' : ''}
                         {formatPnL(cashflowNet)}
                       </span>
-                    ) : (
-                      <span className="day-empty-label">—</span>
-                    )}
+                    ) : null}
                   </button>
                 )
               })}
 
-            <div className="week-total" role="gridcell">
-              <span className="week-label">W{wi + 1}</span>
-              <span
-                className={`week-pnl ${week.totalProfit >= 0 ? 'up' : 'down'}`}
-              >
-                {formatPnL(week.totalProfit)}
-              </span>
+              <div className={`week-total ${weekTone}`} role="gridcell">
+                <span className="week-label">W{wi + 1}</span>
+                {hasWeekData ? (
+                  <>
+                    <span
+                      className={`week-pnl ${week.totalProfit >= 0 ? 'up' : 'down'}`}
+                    >
+                      {formatPnL(week.totalProfit)}
+                    </span>
+                    {week.returnPct != null && (
+                      <span className="week-pct">
+                        {formatDayPct(week.returnPct)}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="week-empty">—</span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )

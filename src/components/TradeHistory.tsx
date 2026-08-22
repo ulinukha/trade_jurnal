@@ -16,6 +16,36 @@ function openTime(trade: Trade) {
   return `${trade.date} ${format(new Date(trade.createdAt), 'HH:mm')}`
 }
 
+function IconHistory() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+      {/* Counter-clockwise history arrow */}
+      <path
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 12a9 9 0 1 0 3-6.7"
+      />
+      <path
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 4v5h5"
+      />
+      {/* Clock hands */}
+      <path
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 7v5l3 2"
+      />
+    </svg>
+  )
+}
+
 export function TradeHistory({
   trades,
   selectedDate,
@@ -31,20 +61,28 @@ export function TradeHistory({
   return (
     <section className="panel history-panel">
       <div className="panel-header history-head">
-        <div>
-          <p className="eyebrow">Executed</p>
-          <h2>Trade history & outcomes</h2>
-          <p className="hint">
-            {showingDay
-              ? selectedDate
-              : 'All trades · click a calendar date to filter'}
-          </p>
+        <div className="history-title-row">
+          <span className="history-icon" aria-hidden>
+            <IconHistory />
+          </span>
+          <div>
+            <h2>Executed trade history & outcomes</h2>
+            <p className="hint">
+              {showingDay
+                ? `Filtered by ${selectedDate}`
+                : 'Realized setups record — click a calendar date to filter'}
+            </p>
+          </div>
         </div>
         <div className="history-tools">
-          <span className="meta-pill">{rows.length} trades</span>
-          <span className={`meta-pill ${net >= 0 ? 'up' : 'down'}`}>
-            {formatPnL(net)}
-          </span>
+          <div className="history-chip purple">
+            <strong>{rows.length}</strong>
+            <span>Trades</span>
+          </div>
+          <div className={`history-chip ${net >= 0 ? 'teal' : 'rose'}`}>
+            <strong>{formatPnL(net)}</strong>
+            <span>USD</span>
+          </div>
           <button type="button" className="btn primary" onClick={onAdd}>
             + /trade
           </button>
@@ -65,7 +103,7 @@ export function TradeHistory({
                 <th>Exit</th>
                 <th>Status</th>
                 <th>Result</th>
-                <th>Profit</th>
+                <th>Profit ($)</th>
               </tr>
             </thead>
             <tbody>
