@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { format } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { enUS } from 'date-fns/locale'
 import type { CashflowType, Withdrawal, WithdrawalInput } from '../types/journal'
 import { parseAmountInput } from '../utils/amountInput'
 import {
@@ -59,14 +59,14 @@ export function WithdrawModal({
     e.preventDefault()
     const n = parseAmountInput(amount)
     if (!date) {
-      setError('Tanggal wajib diisi.')
+      setError('Date is required.')
       return
     }
     if (n === null || n <= 0) {
       setError(
         isDeposit
-          ? 'Jumlah tambah saldo harus > 0.'
-          : 'Jumlah withdraw harus > 0.',
+          ? 'Deposit amount must be greater than 0.'
+          : 'Withdraw amount must be greater than 0.',
       )
       return
     }
@@ -82,13 +82,13 @@ export function WithdrawModal({
       setNote('')
     } catch (err) {
       const detail =
-        err instanceof Error ? err.message : 'Gagal menyimpan pergerakan saldo.'
+        err instanceof Error ? err.message : 'Failed to save cashflow.'
       setError(detail)
     }
   }
 
   async function handleDelete(id: string) {
-    const ok = window.confirm('Hapus catatan saldo ini?')
+    const ok = window.confirm('Delete this cashflow record?')
     if (!ok) return
     await onDelete(id)
   }
@@ -104,13 +104,13 @@ export function WithdrawModal({
       >
         <div className="modal-header">
           <div>
-            <p className="eyebrow">Dana di akun</p>
-            <h2 id="withdraw-title">Kelola saldo</h2>
+            <p className="eyebrow">Account funds</p>
+            <h2 id="withdraw-title">Manage balance</h2>
           </div>
           <button
             type="button"
             className="cal-btn icon modal-close"
-            aria-label="Tutup"
+            aria-label="Close"
             onClick={onClose}
           >
             ×
@@ -118,7 +118,7 @@ export function WithdrawModal({
         </div>
 
         <form className="daily-form withdraw-form" onSubmit={handleSubmit}>
-          <div className="cashflow-toggle" role="tablist" aria-label="Jenis">
+          <div className="cashflow-toggle" role="tablist" aria-label="Type">
             <button
               type="button"
               role="tab"
@@ -135,12 +135,12 @@ export function WithdrawModal({
               className={`cashflow-toggle-btn ${isDeposit ? 'active up' : ''}`}
               onClick={() => setKind('deposit')}
             >
-              Tambah saldo
+              Deposit
             </button>
           </div>
 
           <label className="field">
-            <span>Tanggal</span>
+            <span>Date</span>
             <input
               type="date"
               value={date}
@@ -150,23 +150,23 @@ export function WithdrawModal({
             />
           </label>
           <label className="field">
-            <span>Jumlah (Rp)</span>
+            <span>Amount (USD)</span>
             <AmountInput
               value={amount}
               onChange={setAmount}
-              placeholder="500.000"
+              placeholder="50.00"
               required
               autoFocus
             />
           </label>
           <label className="field">
-            <span>Catatan (opsional)</span>
+            <span>Note (optional)</span>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={
-                isDeposit ? 'Alasan tambah saldo' : 'Alasan tarik saldo'
+                isDeposit ? 'Reason for deposit' : 'Reason for withdraw'
               }
             />
           </label>
@@ -175,7 +175,7 @@ export function WithdrawModal({
 
           <div className="form-actions modal-actions">
             <button type="submit" className="btn primary" disabled={saving}>
-              {saving ? 'Menyimpan…' : 'Simpan'}
+              {saving ? 'Saving…' : 'Save'}
             </button>
             <button
               type="button"
@@ -183,7 +183,7 @@ export function WithdrawModal({
               onClick={onClose}
               disabled={saving}
             >
-              Tutup
+              Close
             </button>
           </div>
         </form>
@@ -191,7 +191,7 @@ export function WithdrawModal({
         {sorted.length > 0 && (
           <div className="withdraw-history">
             <div className="withdraw-history-head">
-              <p className="stat-label">Riwayat</p>
+              <p className="stat-label">History</p>
               <p
                 className={`withdraw-history-total ${net >= 0 ? 'up' : 'down'}`}
               >
@@ -214,13 +214,13 @@ export function WithdrawModal({
               {sorted.map((w) => {
                 const signed = cashflowSigned(w)
                 const kindLabel =
-                  cashflowType(w) === 'deposit' ? 'Tambah' : 'WD'
+                  cashflowType(w) === 'deposit' ? 'Deposit' : 'WD'
                 return (
                   <li key={w.id}>
                     <div>
                       <span className="withdraw-date">
                         {format(new Date(w.date + 'T12:00:00'), 'd MMM yyyy', {
-                          locale: localeId,
+                          locale: enUS,
                         })}
                         <span className="cashflow-chip">{kindLabel}</span>
                       </span>
@@ -235,7 +235,7 @@ export function WithdrawModal({
                     <button
                       type="button"
                       className="withdraw-delete"
-                      aria-label="Hapus catatan saldo"
+                      aria-label="Delete cashflow record"
                       onClick={() => void handleDelete(w.id)}
                       disabled={saving}
                     >

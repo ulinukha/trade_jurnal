@@ -16,7 +16,7 @@ const COLLECTION = 'withdrawals'
 
 function requireDb(): Firestore {
   if (!db) {
-    throw new Error('Firebase belum dikonfigurasi.')
+    throw new Error('Firebase is not configured.')
   }
   return db
 }
@@ -33,9 +33,10 @@ function toWithdrawal(id: string, data: Record<string, unknown>): Withdrawal {
 }
 
 export async function getAllWithdrawals(): Promise<Withdrawal[]> {
-  const q = query(collection(requireDb(), COLLECTION), orderBy('date', 'asc'))
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => toWithdrawal(d.id, d.data()))
+  const snap = await getDocs(collection(requireDb(), COLLECTION))
+  return snap.docs
+    .map((d) => toWithdrawal(d.id, d.data()))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export async function getWithdrawalsByMonth(

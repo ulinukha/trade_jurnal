@@ -21,14 +21,9 @@ export function calcDailyMetrics(entry: DailyEntry): DailyMetrics {
     entry.startingEquity !== 0
       ? (entry.dailyProfit / entry.startingEquity) * 100
       : 0
-  const winRate =
-    entry.totalEntries > 0
-      ? (entry.profitEntries / entry.totalEntries) * 100
-      : 0
-  const lossRate =
-    entry.totalEntries > 0
-      ? (entry.lostEntries / entry.totalEntries) * 100
-      : 0
+  const decided = entry.profitEntries + entry.lostEntries
+  const winRate = decided > 0 ? (entry.profitEntries / decided) * 100 : 0
+  const lossRate = decided > 0 ? (entry.lostEntries / decided) * 100 : 0
 
   return { endingEquity, dailyReturnPct, winRate, lossRate }
 }
@@ -59,7 +54,10 @@ export function calcPeriodSummary(entries: DailyEntry[]): PeriodSummary {
     totalEntries,
     totalWins,
     totalLosses,
-    winRate: totalEntries > 0 ? (totalWins / totalEntries) * 100 : 0,
+    winRate:
+      totalWins + totalLosses > 0
+        ? (totalWins / (totalWins + totalLosses)) * 100
+        : 0,
     tradingDays: entries.length,
     avgDailyProfit: totalProfit / entries.length,
     bestDay: Math.max(...profits),
@@ -68,12 +66,12 @@ export function calcPeriodSummary(entries: DailyEntry[]): PeriodSummary {
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.trunc(value))
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 export function formatPercent(value: number): string {
@@ -82,7 +80,14 @@ export function formatPercent(value: number): string {
 }
 
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat('id-ID').format(value)
+  return new Intl.NumberFormat('en-US').format(value)
+}
+
+export function formatPrice(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 5,
+  }).format(value)
 }
 
 export function calcTotalWithdraw(withdrawals: Withdrawal[]): number {
@@ -156,15 +161,16 @@ export function cashflowByDate(
   return map
 }
 
-/** Compact P/L for calendar cells: Rp157.000 / -Rp120.000 */
+/** Compact P/L for calendar cells: +$85.40 / -$20.37 */
 export function formatPnL(value: number): string {
-  const abs = new Intl.NumberFormat('id-ID', {
+  const abs = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(Math.trunc(Math.abs(value)))
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(value))
   if (value < 0) return `-${abs}`
+  if (value > 0) return `+${abs}`
   return abs
 }
 

@@ -1,5 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { getFirestore, type Firestore } from 'firebase/firestore'
+import { getStorage, type FirebaseStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string | undefined,
@@ -22,10 +23,19 @@ export const isFirebaseConfigured = Boolean(
 
 let app: FirebaseApp | null = null
 let db: Firestore | null = null
+let storage: FirebaseStorage | null = null
 
 if (isFirebaseConfigured) {
   app = initializeApp(firebaseConfig)
   db = getFirestore(app)
+  storage = getStorage(app)
 }
 
-export { db }
+export function requireDb(): Firestore {
+  if (!db) {
+    throw new Error('Firebase is not configured.')
+  }
+  return db
+}
+
+export { db, storage, app }

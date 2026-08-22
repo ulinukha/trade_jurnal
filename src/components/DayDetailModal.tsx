@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import type { DailyEntry, Withdrawal } from '../types/journal'
+import type { DailyEntry, Trade, Withdrawal } from '../types/journal'
+import { SESSION_LABELS } from '../types/journal'
 import {
   calcDailyMetrics,
   calcDayGuide,
@@ -9,6 +10,7 @@ import {
   formatCurrency,
   formatPercent,
   formatPnL,
+  formatPrice,
   STOP_LOSS_PCT,
   TARGET_PCT,
 } from '../utils/calc'
@@ -16,19 +18,23 @@ import {
 interface DayDetailModalProps {
   date: string
   entry: DailyEntry | null
+  trades: Trade[]
   dayWithdrawals: Withdrawal[]
   dayEquity: number | null
   onClose: () => void
-  onEdit: () => void
+  onAdd: () => void
+  onEditTrade: (trade: Trade) => void
 }
 
 export function DayDetailModal({
   date,
   entry,
+  trades,
   dayWithdrawals,
   dayEquity,
   onClose,
-  onEdit,
+  onAdd,
+  onEditTrade,
 }: DayDetailModalProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -41,12 +47,12 @@ export function DayDetailModal({
   const metrics = entry ? calcDailyMetrics(entry) : null
   const guide = calcDayGuide(dayEquity, entry?.dailyProfit ?? null)
   const cashflowNet = calcNetCashflow(dayWithdrawals)
-  const hasData = Boolean(entry) || dayWithdrawals.length > 0
+  const hasData = Boolean(entry) || dayWithdrawals.length > 0 || trades.length > 0
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
       <div
-        className="modal-card"
+        className="modal-card modal-card-wide"
         role="dialog"
         aria-modal="true"
         aria-labelledby="day-detail-title"
@@ -54,13 +60,13 @@ export function DayDetailModal({
       >
         <div className="modal-header">
           <div>
-            <p className="eyebrow">Detail harian</p>
+            <p className="eyebrow">Daily detail</p>
             <h2 id="day-detail-title">{date}</h2>
           </div>
           <button
             type="button"
             className="cal-btn icon modal-close"
-            aria-label="Tutup"
+            aria-label="Close"
             onClick={onClose}
           >
             ×
@@ -68,21 +74,15 @@ export function DayDetailModal({
         </div>
 
         {!hasData ? (
-          <p className="empty">Belum ada data di tanggal ini.</p>
+          <p className="empty">No data on this date.</p>
         ) : (
           <>
             {entry && metrics && (
               <div className="modal-stats">
                 <div>
-                  <p className="stat-label">Equity awal hari</p>
+                  <p className="stat-label">Reference balance</p>
                   <p className="guide-value">
                     {formatCurrency(entry.startingEquity)}
-                  </p>
-                </div>
-                <div>
-                  <p className="stat-label">Equity akhir</p>
-                  <p className="guide-value">
-                    {formatCurrency(metrics.endingEquity)}
                   </p>
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export function DayDetailModal({
                   </p>
                 </div>
                 <div>
-                  <p className="stat-label">% kenaikan</p>
+                  <p className="stat-label">Daily % growth</p>
                   <p
                     className={`guide-value ${metrics.dailyReturnPct >= 0 ? 'up' : 'down'}`}
                   >
@@ -102,15 +102,12 @@ export function DayDetailModal({
                   </p>
                 </div>
                 <div>
-                  <p className="stat-label">Total trade</p>
-                  <p className="guide-value">{entry.totalEntries}</p>
-                </div>
-                <div>
-                  <p className="stat-label">Win / Loss</p>
+                  <p className="stat-label">Trade</p>
                   <p className="guide-value">
-                    <span className="up">{entry.profitEntries}W</span>
+                    {entry.totalEntries} ·{' '}
+                    <span className="up">{entry.profitEntries} TP</span>
                     {' / '}
-                    <span className="down">{entry.lostEntries}L</span>
+                    <span className="down">{entry.lostEntries} SL</span>
                   </p>
                 </div>
                 <div>
@@ -142,14 +139,59 @@ export function DayDetailModal({
               </div>
             )}
 
+            {trades.length > 0 && (
+              <div className="modal-trades">
+                <p className="stat-label">Trades today</p>
+                <ul className="trade-mini-list">
+                  {trades.map((trade) => (
+                    <li key={trade.id}>
+                      <button
+                        type="button"
+                        className="trade-mini-btn"
+                        onClick={() => onEditTrade(trade)}
+                      >
+                        <span className="trade-mini-copy">
+                          <strong>
+                            {trade.pair}{' '}
+                            <span className={`side-tag ${trade.side}`}>
+                              {trade.side === 'buy' ? 'Buy' : 'Sell'}
+                            </span>
+                          </strong>
+                          <span className="hint">
+                            {SESSION_LABELS[trade.session]} ·{' '}
+                            {formatPrice(trade.entryPrice)}
+                            {trade.exitPrice !== null
+                              ? ` → ${formatPrice(trade.exitPrice)}`
+                              : ' · Active'}
+                          </span>
+                        </span>
+                        <span className="trade-mini-meta">
+                          <span
+                            className={`result-tag result-${trade.result.toLowerCase()}`}
+                          >
+                            {trade.result}
+                          </span>
+                          <span
+                            className={trade.profit >= 0 ? 'up' : 'down'}
+                          >
+                            {formatPnL(trade.profit)}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {dayWithdrawals.length > 0 && (
               <div className="modal-withdraws">
-                <p className="stat-label">Pergerakan saldo</p>
+                <p className="stat-label">Balance changes</p>
                 <ul className="withdraw-list compact">
                   {dayWithdrawals.map((w) => {
                     const signed = cashflowSigned(w)
                     const kindLabel =
-                      cashflowType(w) === 'deposit' ? 'Tambah' : 'WD'
+                      cashflowType(w) === 'deposit' ? 'Deposit' : 'WD'
                     return (
                       <li key={w.id}>
                         <span
@@ -159,7 +201,9 @@ export function DayDetailModal({
                           {signed >= 0 ? '+' : ''}
                           {formatPnL(signed)}
                         </span>
-                        {w.note && <span className="withdraw-note">{w.note}</span>}
+                        {w.note && (
+                          <span className="withdraw-note">{w.note}</span>
+                        )}
                       </li>
                     )
                   })}
@@ -180,22 +224,16 @@ export function DayDetailModal({
 
         {guide?.shouldStop && (
           <p className="form-stop-banner" role="alert">
-            STOP — loss sudah melewati batas {(STOP_LOSS_PCT * 100).toFixed(1)}%.
+            STOP — loss already exceeded the {(STOP_LOSS_PCT * 100).toFixed(1)}% limit.
           </p>
         )}
 
         <div className="form-actions modal-actions">
-          {entry ? (
-            <button type="button" className="btn primary" onClick={onEdit}>
-              Edit data
-            </button>
-          ) : (
-            <button type="button" className="btn primary" onClick={onEdit}>
-              Isi data trading
-            </button>
-          )}
+          <button type="button" className="btn primary" onClick={onAdd}>
+            Add trade
+          </button>
           <button type="button" className="btn ghost" onClick={onClose}>
-            Tutup
+            Close
           </button>
         </div>
       </div>

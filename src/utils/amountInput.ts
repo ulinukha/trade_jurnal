@@ -1,33 +1,35 @@
-const intlInteger = new Intl.NumberFormat('id-ID', {
+const intlInteger = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 })
 
-const intlAmount = new Intl.NumberFormat('id-ID', {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-})
-
-/** Format angka untuk input: 5000 → "5.000", 5000.5 → "5.000,5" */
-export function formatAmountInput(value: number): string {
-  return intlAmount.format(value)
+function amountFormatter(maxDecimals: number) {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxDecimals,
+  })
 }
 
-/** Parse "5.000" / "5.000,5" → number */
-export function parseAmountInput(raw: string): number | null {
+/** Format angka untuk input: 5000 → "5,000", 5000.5 → "5,000.5" */
+export function formatAmountInput(value: number, maxDecimals = 2): string {
+  return amountFormatter(maxDecimals).format(value)
+}
+
+/** Parse "5,000" / "5,000.5" → number */
+export function parseAmountInput(raw: string, maxDecimals = 2): number | null {
   const trimmed = raw.trim()
   if (!trimmed || trimmed === '-') return null
 
   const negative = trimmed.startsWith('-')
   const body = negative ? trimmed.slice(1) : trimmed
-  const commaIndex = body.indexOf(',')
+  const dotIndex = body.indexOf('.')
 
   const intDigits =
-    commaIndex >= 0
-      ? body.slice(0, commaIndex).replace(/[^\d]/g, '')
+    dotIndex >= 0
+      ? body.slice(0, dotIndex).replace(/[^\d]/g, '')
       : body.replace(/[^\d]/g, '')
   const decDigits =
-    commaIndex >= 0
-      ? body.slice(commaIndex + 1).replace(/[^\d]/g, '').slice(0, 2)
+    dotIndex >= 0
+      ? body.slice(dotIndex + 1).replace(/[^\d]/g, '').slice(0, maxDecimals)
       : ''
 
   if (!intDigits && !decDigits) return null
@@ -40,11 +42,12 @@ export function parseAmountInput(raw: string): number | null {
 
 /**
  * Format saat user mengetik.
- * Titik = pemisah ribuan, koma = desimal (contoh: 5.000,5).
+ * Koma = pemisah ribuan, titik = desimal (contoh: 1,065.03).
  */
 export function formatAmountInputFromString(
   raw: string,
   allowNegative = false,
+  maxDecimals = 2,
 ): string {
   const trimmed = raw.trim()
   if (!trimmed) return ''
@@ -53,26 +56,26 @@ export function formatAmountInputFromString(
   const body = (negative ? trimmed.slice(1) : trimmed).replace(/\s/g, '')
   if (!body) return negative ? '-' : ''
 
-  const commaIndex = body.indexOf(',')
-  const intRaw = commaIndex >= 0 ? body.slice(0, commaIndex) : body
-  const decRaw = commaIndex >= 0 ? body.slice(commaIndex + 1) : ''
+  const dotIndex = body.indexOf('.')
+  const intRaw = dotIndex >= 0 ? body.slice(0, dotIndex) : body
+  const decRaw = dotIndex >= 0 ? body.slice(dotIndex + 1) : ''
 
   const intDigits = intRaw.replace(/[^\d]/g, '')
-  const decDigits = decRaw.replace(/[^\d]/g, '').slice(0, 2)
-  const hasComma = commaIndex >= 0
+  const decDigits = decRaw.replace(/[^\d]/g, '').slice(0, maxDecimals)
+  const hasDot = dotIndex >= 0
 
-  if (!intDigits && !decDigits && !hasComma) {
+  if (!intDigits && !decDigits && !hasDot) {
     return negative ? '-' : ''
   }
 
   let result = intDigits
     ? intlInteger.format(Number(intDigits))
-    : hasComma || decDigits
+    : hasDot || decDigits
       ? '0'
       : ''
 
-  if (hasComma) {
-    result += `,${decDigits}`
+  if (hasDot) {
+    result += `.${decDigits}`
   }
 
   return negative ? `-${result}` : result

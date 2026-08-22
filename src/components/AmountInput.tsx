@@ -6,12 +6,14 @@ interface AmountInputProps
   value: string
   onChange: (value: string) => void
   allowNegative?: boolean
+  maxDecimals?: number
 }
 
 export function AmountInput({
   value,
   onChange,
   allowNegative = false,
+  maxDecimals = 2,
   inputMode = 'decimal',
   ...props
 }: AmountInputProps) {
@@ -23,7 +25,13 @@ export function AmountInput({
       autoComplete="off"
       value={value}
       onChange={(e) =>
-        onChange(formatAmountInputFromString(e.target.value, allowNegative))
+        onChange(
+          formatAmountInputFromString(
+            e.target.value,
+            allowNegative,
+            maxDecimals,
+          ),
+        )
       }
     />
   )

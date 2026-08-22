@@ -34,7 +34,7 @@ export function InitialEquitySetup({
     e.preventDefault()
     const n = parseAmountInput(value)
     if (n === null || n <= 0) {
-      setError('Modal awal harus angka > 0.')
+      setError('Starting capital must be greater than 0.')
       return
     }
     setError('')
@@ -48,7 +48,7 @@ export function InitialEquitySetup({
         <section className="panel capital-panel">
           <div className="panel-header capital-header-compact">
             <div>
-              <p className="eyebrow">Modal awal</p>
+              <p className="eyebrow">Starting capital</p>
               <h2>{formatCurrency(initialEquity)}</h2>
             </div>
             <div className="panel-header-actions">
@@ -57,7 +57,7 @@ export function InitialEquitySetup({
                 className="btn primary"
                 onClick={() => setWithdrawOpen(true)}
               >
-                Saldo
+                Balance
                 {withdrawals.length > 0 && (
                   <span className="btn-badge">{withdrawals.length}</span>
                 )}
@@ -70,7 +70,7 @@ export function InitialEquitySetup({
                   setEditing(true)
                 }}
               >
-                Ubah
+                Edit
               </button>
             </div>
           </div>
@@ -94,17 +94,21 @@ export function InitialEquitySetup({
     <section className="panel capital-panel highlight">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Setup sekali</p>
-          <h2>{initialEquity === null ? 'Isi modal awal' : 'Ubah modal awal'}</h2>
+          <p className="eyebrow">One-time setup</p>
+          <h2>
+            {initialEquity === null
+              ? 'Set starting capital'
+              : 'Edit starting capital'}
+          </h2>
         </div>
       </div>
       <form className="daily-form" onSubmit={handleSubmit}>
         <label className="field">
-          <span>Modal / equity awal (Rp)</span>
+          <span>Starting capital (USD)</span>
           <AmountInput
             value={value}
             onChange={setValue}
-            placeholder="10.000.000"
+            placeholder="1,000.00"
             required
             autoFocus
           />
@@ -112,7 +116,7 @@ export function InitialEquitySetup({
         {error && <p className="form-error">{error}</p>}
         <div className="form-actions">
           <button type="submit" className="btn primary" disabled={saving}>
-            {saving ? 'Menyimpan…' : 'Simpan modal awal'}
+            {saving ? 'Saving…' : 'Save starting capital'}
           </button>
           {initialEquity !== null && (
             <button
@@ -121,7 +125,7 @@ export function InitialEquitySetup({
               onClick={() => setEditing(false)}
               disabled={saving}
             >
-              Batal
+              Cancel
             </button>
           )}
         </div>

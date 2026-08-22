@@ -1,31 +1,25 @@
-import { useCallback, useEffect, useState } from 'react'
-import { DailyForm } from './components/DailyForm'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DayDetailModal } from './components/DayDetailModal'
-import { DayGuideCard } from './components/DayGuideCard'
 import { InitialEquitySetup } from './components/InitialEquitySetup'
 import { MonthCalendar } from './components/MonthCalendar'
+import { PairBar } from './components/PairBar'
 import { SummaryCards } from './components/SummaryCards'
+import { TradeDetailModal } from './components/TradeDetailModal'
+import { TradeDialog } from './components/TradeDialog'
+import { TradeHistory } from './components/TradeHistory'
+import { firestoreLoadHint } from './lib/firebaseError'
 import { isFirebaseConfigured } from './lib/firebase'
-import {
-  deleteEntry,
-  ensureInitialEquityFromLegacy,
-  getAllEntries,
-  getEntriesByMonth,
-  getEntryByDate,
-  moveEntry,
-  recomputeAllStartingEquity,
-  saveInitialEquity,
-  upsertEntry,
-} from './services/journal'
+import { getSettings, saveInitialEquity } from './services/journal'
+import { deleteTrade, getAllTrades, saveTrade } from './services/trades'
 import {
   addWithdrawal,
   deleteWithdrawal,
   getAllWithdrawals,
-  getWithdrawalsByMonth,
 } from './services/withdrawals'
-import type { DailyEntry, DailyEntryInput, Withdrawal, WithdrawalInput } from './types/journal'
-import { calcStartingEquity } from './utils/calc'
-import { isFutureDate, todayStr } from './utils/date'
+import { PRESET_PAIRS } from './types/journal'
+import type { Trade, TradeInput, Withdrawal, WithdrawalInput } from './types/journal'
+import { tradesForDate, tradesToDailyEntries } from './utils/aggregate'
+import { todayStr } from './utils/date'
 import './App.css'
 
 function monthFromDate(date: string) {
@@ -35,62 +29,110 @@ function monthFromDate(date: string) {
 export default function App() {
   const [selectedDate, setSelectedDate] = useState(todayStr)
   const [monthValue, setMonthValue] = useState(monthFromDate(todayStr()))
-  const [monthEntries, setMonthEntries] = useState<DailyEntry[]>([])
-  const [allEntries, setAllEntries] = useState<DailyEntry[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
   const [allWithdrawals, setAllWithdrawals] = useState<Withdrawal[]>([])
-  const [monthWithdrawals, setMonthWithdrawals] = useState<Withdrawal[]>([])
-  const [selectedEntry, setSelectedEntry] = useState<DailyEntry | null>(null)
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
+  const [viewingTrade, setViewingTrade] = useState<Trade | null>(null)
+  const [formOpen, setFormOpen] = useState(false)
+  const [prefillPair, setPrefillPair] = useState('')
+  const [pairFilter, setPairFilter] = useState('all')
   const [initialEquity, setInitialEquity] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [draftProfit, setDraftProfit] = useState<number | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
-  const loadData = useCallback(async (date: string, month: string) => {
+  const filteredTrades = useMemo(
+    () =>
+      pairFilter === 'all'
+        ? trades
+        : trades.filter((t) => t.pair === pairFilter),
+    [trades, pairFilter],
+  )
+
+  const allEntries = useMemo(
+    () => tradesToDailyEntries(trades, initialEquity, allWithdrawals),
+    [trades, initialEquity, allWithdrawals],
+  )
+  const calendarEntries = useMemo(
+    () => tradesToDailyEntries(filteredTrades, initialEquity, allWithdrawals),
+    [filteredTrades, initialEquity, allWithdrawals],
+  )
+  const monthEntries = useMemo(
+    () => allEntries.filter((e) => e.date.startsWith(monthValue)),
+    [allEntries, monthValue],
+  )
+  const calendarMonthEntries = useMemo(
+    () => calendarEntries.filter((e) => e.date.startsWith(monthValue)),
+    [calendarEntries, monthValue],
+  )
+  const monthWithdrawals = useMemo(
+    () => allWithdrawals.filter((w) => w.date.startsWith(monthValue)),
+    [allWithdrawals, monthValue],
+  )
+  const selectedEntry = allEntries.find((e) => e.date === selectedDate) ?? null
+  const todayEntry = allEntries.find((e) => e.date === todayStr()) ?? null
+  const dayTrades = useMemo(
+    () => tradesForDate(trades, selectedDate),
+    [trades, selectedDate],
+  )
+  const pairs = useMemo(() => {
+    const presets = new Set<string>(PRESET_PAIRS)
+    return [
+      ...PRESET_PAIRS,
+      ...new Set(trades.map((t) => t.pair).filter((p) => !presets.has(p))),
+    ]
+  }, [trades])
+
+  const loadData = useCallback(async () => {
     if (!isFirebaseConfigured) {
       setLoading(false)
       setError(
-        'Firebase belum dikonfigurasi. Salin .env.example ke .env dan isi kredensial project-mu.',
+        'Firebase is not configured. Copy .env.example to .env and add your project credentials.',
       )
       return
     }
 
-    setLoading(true)
     setError('')
     try {
-      const settings = await ensureInitialEquityFromLegacy()
-      setInitialEquity(settings?.initialEquity ?? null)
+      const [settingsRes, tradesRes, withdrawalsRes] = await Promise.allSettled([
+        getSettings(),
+        getAllTrades(),
+        getAllWithdrawals(),
+      ])
 
-      const [y, m] = month.split('-').map(Number)
-      const [monthData, allData, allWithdrawData, monthWithdrawData, dayData] =
-        await Promise.all([
-          getEntriesByMonth(y, m),
-          getAllEntries(),
-          getAllWithdrawals(),
-          getWithdrawalsByMonth(y, m),
-          getEntryByDate(date),
-        ])
-      setMonthEntries(monthData)
-      setAllEntries(allData)
-      setAllWithdrawals(allWithdrawData)
-      setMonthWithdrawals(monthWithdrawData)
-      setSelectedEntry(dayData)
+      if (settingsRes.status === 'fulfilled') {
+        setInitialEquity(settingsRes.value?.initialEquity ?? null)
+      }
+      if (tradesRes.status === 'fulfilled') {
+        setTrades(tradesRes.value)
+        setEditingTrade((current) =>
+          current
+            ? (tradesRes.value.find((t) => t.id === current.id) ?? null)
+            : null,
+        )
+      }
+      if (withdrawalsRes.status === 'fulfilled') {
+        setAllWithdrawals(withdrawalsRes.value)
+      }
+
+      const failed = [settingsRes, tradesRes, withdrawalsRes].find(
+        (r) => r.status === 'rejected',
+      )
+      if (failed && failed.status === 'rejected') {
+        setError(firestoreLoadHint(failed.reason))
+      }
     } catch (err) {
       console.error(err)
-      const detail =
-        err instanceof Error
-          ? err.message
-          : 'Cek rules & pastikan Firestore sudah dibuat.'
-      setError(`Gagal memuat data dari Firestore. ${detail}`)
+      setError(firestoreLoadHint(err))
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    void loadData(selectedDate, monthValue)
-  }, [selectedDate, monthValue, loadData])
+    void loadData()
+  }, [loadData])
 
   function handleDateChange(date: string) {
     setSelectedDate(date)
@@ -99,10 +141,6 @@ export default function App() {
 
   function handleCalendarSelect(date: string) {
     handleDateChange(date)
-    if (isFutureDate(date)) {
-      setDetailOpen(false)
-      return
-    }
     setDetailOpen(true)
   }
 
@@ -121,11 +159,28 @@ export default function App() {
     setDetailOpen(true)
   }
 
-  function handleEditFromModal() {
+  function openNewTrade(pair?: string) {
+    setEditingTrade(null)
+    setPrefillPair(pair ?? '')
+    setFormOpen(true)
     setDetailOpen(false)
-    document
-      .querySelector('.form-panel')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  function handleViewTrade(trade: Trade) {
+    setSelectedDate(trade.date)
+    setMonthValue(monthFromDate(trade.date))
+    setViewingTrade(trade)
+    setDetailOpen(false)
+  }
+
+  function handleEditTrade(trade: Trade) {
+    setSelectedDate(trade.date)
+    setMonthValue(monthFromDate(trade.date))
+    setEditingTrade(trade)
+    setPrefillPair('')
+    setViewingTrade(null)
+    setFormOpen(true)
+    setDetailOpen(false)
   }
 
   async function handleSaveInitialEquity(value: number) {
@@ -133,12 +188,10 @@ export default function App() {
     setError('')
     try {
       await saveInitialEquity(value)
-      await recomputeAllStartingEquity()
       setInitialEquity(value)
-      await loadData(selectedDate, monthValue)
     } catch (err) {
       console.error(err)
-      setError('Gagal menyimpan modal awal.')
+      setError(firestoreLoadHint(err) || 'Failed to save starting capital.')
     } finally {
       setSaving(false)
     }
@@ -149,15 +202,10 @@ export default function App() {
     setError('')
     try {
       await addWithdrawal(input)
-      await recomputeAllStartingEquity()
-      await loadData(selectedDate, monthValue)
+      await loadData()
     } catch (err) {
       console.error(err)
-      const detail =
-        err instanceof Error
-          ? err.message
-          : 'Cek rules Firestore untuk collection withdrawals.'
-      setError(`Gagal menyimpan pergerakan saldo. ${detail}`)
+      setError(firestoreLoadHint(err))
       throw err
     } finally {
       setSaving(false)
@@ -169,97 +217,62 @@ export default function App() {
     setError('')
     try {
       await deleteWithdrawal(id)
-      await recomputeAllStartingEquity()
-      await loadData(selectedDate, monthValue)
+      await loadData()
     } catch (err) {
       console.error(err)
-      setError('Gagal menghapus catatan saldo.')
+      setError(firestoreLoadHint(err))
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleSave(input: DailyEntryInput) {
+  async function handleSave(input: TradeInput, imageFile: File | null) {
     setSaving(true)
     setError('')
     try {
-      await upsertEntry(input)
-      await loadData(selectedDate, monthValue)
+      await saveTrade(input, imageFile, editingTrade)
+      setSelectedDate(input.date)
+      setMonthValue(monthFromDate(input.date))
+      setEditingTrade(null)
+      setFormOpen(false)
+      await loadData()
     } catch (err) {
       console.error(err)
-      setError(
-        err instanceof Error ? err.message : 'Gagal menyimpan data.',
-      )
+      setError(err instanceof Error ? err.message : 'Failed to save trade.')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDelete(date: string) {
+  async function handleDelete(trade: Trade) {
     setSaving(true)
     setError('')
     try {
-      await deleteEntry(date)
-      await loadData(selectedDate, monthValue)
+      await deleteTrade(trade)
+      setEditingTrade(null)
+      setFormOpen(false)
+      await loadData()
     } catch (err) {
       console.error(err)
-      setError('Gagal menghapus data.')
+      setError('Failed to delete trade.')
     } finally {
       setSaving(false)
     }
   }
-
-  async function handleMove(fromDate: string, toDate: string) {
-    setSaving(true)
-    setError('')
-    try {
-      await moveEntry(fromDate, toDate)
-      setSelectedDate(toDate)
-      setMonthValue(monthFromDate(toDate))
-      await loadData(toDate, monthFromDate(toDate))
-    } catch (err) {
-      console.error(err)
-      throw err
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const dailyProfit = isFutureDate(selectedDate)
-    ? null
-    : (draftProfit ?? selectedEntry?.dailyProfit ?? null)
-
-  const dayEquity =
-    initialEquity === null
-      ? null
-      : calcStartingEquity(
-          initialEquity,
-          allEntries,
-          allWithdrawals,
-          selectedDate,
-        )
-
-  const detailEntry =
-    monthEntries.find((e) => e.date === selectedDate) ??
-    allEntries.find((e) => e.date === selectedDate) ??
-    selectedEntry
 
   const detailWithdrawals = allWithdrawals.filter((w) => w.date === selectedDate)
 
   return (
     <div className="app">
-      <div className="bg-glow" aria-hidden />
       <header className="hero">
-        <p className="brand">Trade Jurnal</p>
-        <h1>Daily trading report</h1>
-        <p className="lede">
-          Modal awal diisi sekali. Equity harian otomatis. Target 10%, stop di
-          7,5%.
-        </p>
+        <div>
+          <p className="brand">Trade Journal</p>
+          <h1>Account & portfolio overview</h1>
+        </div>
       </header>
 
       {error && <p className="banner error">{error}</p>}
-      {loading && <p className="banner">Memuat data…</p>}
+      {loading && <p className="banner">Loading data…</p>}
 
       {!loading && (
         <>
@@ -276,48 +289,71 @@ export default function App() {
             monthEntries={monthEntries}
             allEntries={allEntries}
             selectedEntry={selectedEntry}
+            todayEntry={todayEntry}
             initialEquity={initialEquity}
             withdrawals={allWithdrawals}
           />
 
-          <MonthCalendar
-            monthValue={monthValue}
-            entries={monthEntries}
-            withdrawals={monthWithdrawals}
-            selectedDate={selectedDate}
-            onSelectDate={handleCalendarSelect}
-            onMonthChange={handleMonthChange}
-            onToday={handleToday}
-          />
+          <PairBar trades={trades} onAddTrade={openNewTrade} />
 
-          <div className="layout">
-            <DailyForm
+          <div className="dashboard">
+            <TradeHistory
+              trades={filteredTrades}
               selectedDate={selectedDate}
-              existing={selectedEntry}
-              dayEquity={dayEquity}
-              hasInitialEquity={initialEquity !== null}
-              saving={saving}
-              onSave={handleSave}
-              onDelete={handleDelete}
-              onMove={handleMove}
-              onSelectDate={handleDateChange}
-              onDraftProfitChange={setDraftProfit}
+              selectedTradeId={viewingTrade?.id ?? editingTrade?.id}
+              onSelect={handleViewTrade}
+              onAdd={() => openNewTrade()}
             />
-            <DayGuideCard
+            <MonthCalendar
+              monthValue={monthValue}
+              entries={calendarMonthEntries}
+              withdrawals={monthWithdrawals}
               selectedDate={selectedDate}
-              baseEquity={dayEquity}
-              dailyProfit={dailyProfit}
+              pairs={pairs}
+              pairFilter={pairFilter}
+              onPairFilter={setPairFilter}
+              onSelectDate={handleCalendarSelect}
+              onMonthChange={handleMonthChange}
+              onToday={handleToday}
             />
           </div>
+
+          {viewingTrade && (
+            <TradeDetailModal
+              trade={viewingTrade}
+              onClose={() => setViewingTrade(null)}
+              onEdit={handleEditTrade}
+            />
+          )}
+
+          <TradeDialog
+            open={formOpen}
+            selectedDate={selectedDate}
+            existing={editingTrade}
+            prefillPair={prefillPair}
+            hasInitialEquity={initialEquity !== null}
+            saving={saving}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onSelectDate={handleDateChange}
+            onClose={() => {
+              setFormOpen(false)
+              setEditingTrade(null)
+            }}
+          />
 
           {detailOpen && (
             <DayDetailModal
               date={selectedDate}
-              entry={detailEntry}
+              entry={selectedEntry}
+              trades={dayTrades}
               dayWithdrawals={detailWithdrawals}
-              dayEquity={dayEquity}
+              dayEquity={
+                selectedEntry?.startingEquity ?? initialEquity
+              }
               onClose={() => setDetailOpen(false)}
-              onEdit={handleEditFromModal}
+              onAdd={() => openNewTrade()}
+              onEditTrade={handleViewTrade}
             />
           )}
         </>

@@ -26,13 +26,13 @@ export function DayGuideCard({
       <section className="panel guide-panel">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Panduan harian</p>
+            <p className="eyebrow">Daily guide</p>
             <h2>{selectedDate.replaceAll('-', '/')}</h2>
           </div>
         </div>
         <p className="empty">
-          Belum ada modal awal. Isi modal awal sekali di panel atas agar target
-          & stop loss bisa dihitung.
+          Starting capital is not set. Add it once in the top panel so the
+          target and stop loss can be calculated.
         </p>
       </section>
     )
@@ -42,19 +42,19 @@ export function DayGuideCard({
     <section className={`panel guide-panel ${guide.shouldStop ? 'danger' : ''}`}>
       <div className="panel-header">
         <div>
-            <p className="eyebrow">Panduan harian</p>
+          <p className="eyebrow">Daily guide</p>
           <h2>{selectedDate.replaceAll('-', '/')}</h2>
         </div>
       </div>
 
       <div className="guide-stats">
         <div>
-          <p className="stat-label">Saldo acuan</p>
+          <p className="stat-label">Reference balance</p>
           <p className="guide-value">{formatCurrency(guide.baseEquity)}</p>
         </div>
         <div>
           <p className="stat-label">
-            Target profit ({(TARGET_PCT * 100).toFixed(0)}%)
+            Profit target ({(TARGET_PCT * 100).toFixed(0)}%)
           </p>
           <p className="guide-value up">{formatCurrency(guide.targetProfit)}</p>
         </div>
@@ -70,7 +70,7 @@ export function DayGuideCard({
 
       {guide.progressToTargetPct !== null && (
         <p className="guide-progress">
-          Progress ke target:{' '}
+          Progress to target:{' '}
           <strong
             className={
               (dailyProfit ?? 0) >= 0
@@ -87,23 +87,23 @@ export function DayGuideCard({
 
       {guide.shouldStop ? (
         <div className="guide-alert stop" role="alert">
-          <strong>STOP trading hari ini.</strong>
+          <strong>STOP trading today.</strong>
           <span>
-            Loss sudah {guide.lossPctOfBase.toFixed(2)}% dari equity hari
-            sebelumnya (batas {(STOP_LOSS_PCT * 100).toFixed(1)}% /{' '}
-            {formatCurrency(guide.stopLossAmount)}). Lindungi modal — lanjutkan
-            besok.
+            Loss is already {guide.lossPctOfBase.toFixed(2)}% of the reference
+            balance (limit {(STOP_LOSS_PCT * 100).toFixed(1)}% /{' '}
+            {formatCurrency(guide.stopLossAmount)}). Protect capital — continue
+            tomorrow.
           </span>
         </div>
       ) : (
         <div className="guide-alert ok">
           <strong>
-            {upcoming ? 'Rencana hari ini.' : 'Masih dalam batas aman.'}
+            {upcoming ? 'Plan for today.' : 'Still within the safe limit.'}
           </strong>
           <span>
             Target {formatCurrency(guide.targetProfit)}.{' '}
             <span className="down">
-              Stop jika loss mencapai {formatCurrency(guide.stopLossAmount)}.
+              Stop if loss reaches {formatCurrency(guide.stopLossAmount)}.
             </span>
           </span>
         </div>

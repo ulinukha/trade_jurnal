@@ -1,22 +1,24 @@
 import { format } from 'date-fns'
-import { id as localeId } from 'date-fns/locale'
+import { enUS } from 'date-fns/locale'
 import { buildMonthWeeks, shiftMonth } from '../utils/calendar'
 import {
-  calcDailyMetrics,
   calcPeriodSummary,
-  formatPercent,
+  formatNumber,
   formatPnL,
 } from '../utils/calc'
 import { isFutureDate, todayStr } from '../utils/date'
 import type { DailyEntry, Withdrawal } from '../types/journal'
 
-const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI']
 
 interface MonthCalendarProps {
   monthValue: string
   entries: DailyEntry[]
   withdrawals: Withdrawal[]
   selectedDate: string
+  pairs: string[]
+  pairFilter: string
+  onPairFilter: (pair: string) => void
   onSelectDate: (date: string) => void
   onMonthChange: (month: string) => void
   onToday: () => void
@@ -25,7 +27,7 @@ interface MonthCalendarProps {
 function buildMonthOptions(): { value: string; label: string }[] {
   const options: { value: string; label: string }[] = []
   const now = new Date()
-  const start = new Date(2026, 0, 1) // Januari 2026
+  const start = new Date(2026, 0, 1)
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
   for (
@@ -35,7 +37,7 @@ function buildMonthOptions(): { value: string; label: string }[] {
   ) {
     options.push({
       value: format(d, 'yyyy-MM'),
-      label: format(d, 'MMMM yyyy', { locale: localeId }),
+      label: format(d, 'MMMM yyyy', { locale: enUS }),
     })
   }
 
@@ -50,14 +52,19 @@ export function MonthCalendar({
   entries,
   withdrawals,
   selectedDate,
+  pairs,
+  pairFilter,
+  onPairFilter,
   onSelectDate,
   onMonthChange,
   onToday,
 }: MonthCalendarProps) {
   const [year, month] = monthValue.split('-').map(Number)
   const weeks = buildMonthWeeks(year, month, entries, withdrawals)
-  const monthProfit = calcPeriodSummary(entries).totalProfit
+  const summary = calcPeriodSummary(entries)
   const today = todayStr()
+  const winDays = entries.filter((e) => e.dailyProfit > 0).length
+  const lossDays = entries.filter((e) => e.dailyProfit < 0).length
 
   const hasCurrent = MONTH_OPTIONS.some((o) => o.value === monthValue)
   const selectOptions = hasCurrent
@@ -66,7 +73,7 @@ export function MonthCalendar({
         {
           value: monthValue,
           label: format(new Date(year, month - 1, 1), 'MMMM yyyy', {
-            locale: localeId,
+            locale: enUS,
           }),
         },
         ...MONTH_OPTIONS,
@@ -80,14 +87,31 @@ export function MonthCalendar({
   return (
     <section className="calendar-panel">
       <div className="calendar-toolbar">
+        <div>
+          <p className="eyebrow">Daily PnL</p>
+          <h2>Calendar</h2>
+        </div>
         <div className="calendar-nav">
+          <select
+            className="cal-filter"
+            value={pairFilter}
+            onChange={(e) => onPairFilter(e.target.value)}
+            aria-label="Filter pair"
+          >
+            <option value="all">All symbols</option>
+            {pairs.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
           <button type="button" className="cal-btn" onClick={onToday}>
             Today
           </button>
           <button
             type="button"
             className="cal-btn icon"
-            aria-label="Bulan sebelumnya"
+            aria-label="Previous month"
             disabled={!canPrev}
             onClick={() => onMonthChange(prevMonth)}
           >
@@ -96,18 +120,18 @@ export function MonthCalendar({
           <button
             type="button"
             className="cal-btn icon"
-            aria-label="Bulan berikutnya"
+            aria-label="Next month"
             disabled={!canNext}
             onClick={() => onMonthChange(nextMonth)}
           >
             ›
           </button>
           <label className="cal-month-select">
-            <span className="sr-only">Pilih bulan</span>
+            <span className="sr-only">Select month</span>
             <select
               value={monthValue}
               onChange={(e) => onMonthChange(e.target.value)}
-              aria-label="Pilih bulan"
+              aria-label="Select month"
             >
               {selectOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -116,113 +140,126 @@ export function MonthCalendar({
               ))}
             </select>
           </label>
-          <span
-            className={`calendar-month-pnl ${monthProfit >= 0 ? 'up' : 'down'}`}
-          >
-            {formatPnL(monthProfit)}
-          </span>
         </div>
       </div>
 
-      <div className="calendar-grid" role="grid" aria-label="Kalender trading">
+      <div className="calendar-stats">
+        <div>
+          <span>Month PnL</span>
+          <strong className={summary.totalProfit >= 0 ? 'up' : 'down'}>
+            {formatPnL(summary.totalProfit)}
+          </strong>
+        </div>
+        <div>
+          <span>Day W/L</span>
+          <strong>
+            {winDays}/{lossDays}
+          </strong>
+        </div>
+        <div>
+          <span>Pos W/L</span>
+          <strong>
+            {formatNumber(summary.totalWins)}/{formatNumber(summary.totalLosses)}
+          </strong>
+        </div>
+        <div>
+          <span>Deals</span>
+          <strong>{formatNumber(summary.totalEntries)}</strong>
+        </div>
+      </div>
+
+      <div className="calendar-grid" role="grid" aria-label="Trading calendar">
         <div className="calendar-head" role="row">
           {WEEKDAYS.map((d) => (
             <div
               key={d}
-              className={`calendar-head-cell ${d === 'SUN' || d === 'SAT' ? 'weekend' : ''}`}
+              className="calendar-head-cell"
               role="columnheader"
             >
               {d}
             </div>
           ))}
           <div className="calendar-head-cell week-col" role="columnheader">
-            Weekly Total
+            Total
           </div>
         </div>
 
         {weeks.map((week, wi) => (
           <div key={wi} className="calendar-row" role="row">
-            {week.days.map((day) => {
-              if (!day.inMonth) {
+            {week.days
+              .filter((day) => !day.isWeekend)
+              .map((day) => {
+                if (!day.inMonth) {
+                  return (
+                    <div
+                      key={day.date}
+                      className={`day-cell out ${day.isWeekend ? 'weekend' : ''}`}
+                      role="gridcell"
+                      aria-hidden
+                    />
+                  )
+                }
+
+                const entry = day.entry
+                const profit = entry?.dailyProfit
+                const hasEntry = Boolean(entry)
+                const cashflowNet = day.cashflowNet
+                const hasCashflow = cashflowNet !== 0
+                const tone = day.isWeekend
+                  ? hasCashflow
+                    ? cashflowNet > 0
+                      ? 'deposit'
+                      : 'withdraw'
+                    : 'weekend'
+                  : hasEntry
+                    ? profit! > 0
+                      ? 'profit'
+                      : profit! < 0
+                        ? 'loss'
+                        : 'flat'
+                    : hasCashflow
+                      ? cashflowNet > 0
+                        ? 'deposit'
+                        : 'withdraw'
+                      : 'empty'
+                const selected = day.date === selectedDate
+                const future = isFutureDate(day.date, today)
+
                 return (
-                  <div
+                  <button
                     key={day.date}
-                    className={`day-cell out ${day.isWeekend ? 'weekend' : ''}`}
+                    type="button"
                     role="gridcell"
-                    aria-hidden
-                  />
+                    className={`day-cell ${tone} ${selected ? 'selected' : ''} ${future ? 'future' : ''}`}
+                    onClick={() => onSelectDate(day.date)}
+                  >
+                    <span className="day-num">{day.dayNumber}</span>
+                    {!future && hasEntry ? (
+                      <>
+                        <span className="day-pnl">{formatPnL(profit!)}</span>
+                        <span className="day-trades">
+                          {entry!.totalEntries}x
+                        </span>
+                      </>
+                    ) : !future && hasCashflow ? (
+                      <span className="day-pnl">
+                        {cashflowNet > 0 ? '+' : ''}
+                        {formatPnL(cashflowNet)}
+                      </span>
+                    ) : (
+                      <span className="day-empty-label">—</span>
+                    )}
+                  </button>
                 )
-              }
-
-              const entry = day.entry
-              const profit = entry?.dailyProfit
-              const hasEntry = Boolean(entry)
-              const cashflowNet = day.cashflowNet
-              const hasCashflow = cashflowNet !== 0
-              const pct = entry ? calcDailyMetrics(entry).dailyReturnPct : null
-              const cashflowTone = cashflowNet > 0 ? 'deposit' : 'withdraw'
-              const tone = day.isWeekend
-                ? hasCashflow
-                  ? cashflowTone
-                  : 'weekend'
-                : hasEntry
-                  ? profit! > 0
-                    ? 'profit'
-                    : profit! < 0
-                      ? 'loss'
-                      : 'flat'
-                  : hasCashflow
-                    ? cashflowTone
-                    : 'empty'
-              const selected = day.date === selectedDate
-              const future = isFutureDate(day.date, today)
-
-              return (
-                <button
-                  key={day.date}
-                  type="button"
-                  role="gridcell"
-                  className={`day-cell ${tone} ${selected ? 'selected' : ''} ${future ? 'future' : ''}`}
-                  onClick={() => onSelectDate(day.date)}
-                  title={
-                    future
-                      ? 'Lihat panduan — catatan trading belum bisa diisi'
-                      : day.isWeekend
-                        ? 'Weekend — stop trade'
-                        : undefined
-                  }
-                >
-                  <span className="day-num">{day.dayNumber}</span>
-                  {!future && hasEntry && pct !== null ? (
-                    <>
-                      <span className="day-pnl">{formatPnL(profit!)}</span>
-                      <span className="day-pct">{formatPercent(pct)}</span>
-                    </>
-                  ) : !future && hasCashflow ? (
-                    <span className="day-pnl">
-                      {cashflowNet > 0 ? '+' : ''}
-                      {formatPnL(cashflowNet)}
-                    </span>
-                  ) : (
-                    <span className="day-empty-label">—</span>
-                  )}
-                </button>
-              )
-            })}
+              })}
 
             <div className="week-total" role="gridcell">
+              <span className="week-label">W{wi + 1}</span>
               <span
                 className={`week-pnl ${week.totalProfit >= 0 ? 'up' : 'down'}`}
               >
                 {formatPnL(week.totalProfit)}
               </span>
-              {week.returnPct !== null && (
-                <span
-                  className={`week-pct ${week.returnPct >= 0 ? 'up' : 'down'}`}
-                >
-                  {formatPercent(week.returnPct)}
-                </span>
-              )}
             </div>
           </div>
         ))}
