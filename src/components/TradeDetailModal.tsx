@@ -56,9 +56,7 @@ export function TradeDetailModal({
             alt={`Chart ${trade.pair}`}
             className="trade-detail-chart"
           />
-        ) : (
-          <p className="empty">No chart screenshot.</p>
-        )}
+        ) : null}
 
         <div className="modal-stats">
           <div>
@@ -93,6 +91,10 @@ export function TradeDetailModal({
           <div>
             <p className="stat-label">Entry</p>
             <p className="guide-value">{formatPrice(trade.entryPrice)}</p>
+          </div>
+          <div>
+            <p className="stat-label">Lot</p>
+            <p className="guide-value">{trade.lot.toFixed(2)}</p>
           </div>
           <div>
             <p className="stat-label">Exit</p>

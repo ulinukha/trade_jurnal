@@ -62,6 +62,7 @@ function toTrade(id: string, data: Record<string, unknown>): Trade | null {
     result: data.result,
     entryPrice: Number(data.entryPrice ?? 0),
     exitPrice: exitPrice !== null && Number.isNaN(exitPrice) ? null : exitPrice,
+    lot: Number(data.lot ?? 0),
     profit: Number(data.profit ?? 0),
     reason: String(data.reason ?? ''),
     chartImageUrl: String(data.chartImageUrl ?? ''),
@@ -153,10 +154,6 @@ export async function saveTrade(
     chartImagePath = uploaded.path
   }
 
-  if (!chartImageUrl) {
-    throw new Error('Chart screenshot is required.')
-  }
-
   const payload = {
     kind: TRADE_KIND,
     date: input.date,
@@ -166,16 +163,22 @@ export async function saveTrade(
     result: input.result,
     entryPrice: input.entryPrice,
     exitPrice: input.exitPrice,
+    lot: input.lot,
     profit: input.profit,
     reason: input.reason,
-    chartImageUrl,
+    ...(chartImageUrl ? { chartImageUrl } : {}),
     ...(chartImagePath ? { chartImagePath } : {}),
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
   }
 
   await setDoc(doc(db, COLLECTION, id), payload)
-  return { id, ...payload, chartImagePath }
+  return {
+    id,
+    ...payload,
+    chartImageUrl: chartImageUrl ?? '',
+    chartImagePath,
+  }
 }
 
 export async function deleteTrade(trade: Trade): Promise<void> {

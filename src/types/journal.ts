@@ -25,6 +25,7 @@ export interface Trade {
   result: TradeResult
   entryPrice: number
   exitPrice: number | null
+  lot: number
   profit: number
   reason: string
   chartImageUrl: string
@@ -41,6 +42,7 @@ export type TradeInput = {
   result: TradeResult
   entryPrice: number
   exitPrice: number | null
+  lot: number
   profit: number
   reason: string
 }

@@ -100,6 +100,7 @@ export function TradeHistory({
                 <th>Time open</th>
                 <th>Type</th>
                 <th>Entry</th>
+                <th>Lot</th>
                 <th>Exit</th>
                 <th>Status</th>
                 <th>Result</th>
@@ -126,6 +127,7 @@ export function TradeHistory({
                       </span>
                     </td>
                     <td className="mono">{formatPrice(trade.entryPrice)}</td>
+                    <td className="mono">{trade.lot.toFixed(2)}</td>
                     <td className="mono">
                       {trade.exitPrice === null
                         ? '—'

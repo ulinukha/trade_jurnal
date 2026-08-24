@@ -36,6 +36,7 @@ const emptyForm = {
   result: 'Pending' as TradeResult,
   entryPrice: '',
   exitPrice: '',
+  lot: '',
   profit: '',
   reason: '',
 }
@@ -71,6 +72,7 @@ export function TradeDialog({
           existing.exitPrice === null
             ? ''
             : formatAmountInput(existing.exitPrice, 5),
+        lot: formatAmountInput(existing.lot, 2),
         profit: formatAmountInput(existing.profit),
         reason: existing.reason,
       })
@@ -171,12 +173,17 @@ export function TradeDialog({
       form.exitPrice.trim() === ''
         ? null
         : parseAmountInput(form.exitPrice, 5)
+    const lot = parseAmountInput(form.lot, 2)
     const profit =
       parseAmountInput(form.profit) ?? (form.result === 'Pending' ? 0 : null)
     const reason = form.reason.trim()
 
     if (entryPrice === null) {
       setError('Entry price is invalid.')
+      return
+    }
+    if (lot === null || lot <= 0) {
+      setError('Lot must be greater than 0.')
       return
     }
     if (form.result !== 'Pending' && exitPrice === null) {
@@ -191,14 +198,6 @@ export function TradeDialog({
       setError('Reason is required.')
       return
     }
-    if (!existing && !imageFile) {
-      setError('Chart screenshot is required. Add an image so the preview appears first.')
-      return
-    }
-    if (existing && !imageFile && !existing.chartImageUrl) {
-      setError('Chart screenshot is required.')
-      return
-    }
 
     await onSave(
       {
@@ -209,6 +208,7 @@ export function TradeDialog({
         result: form.result,
         entryPrice,
         exitPrice,
+        lot,
         profit,
         reason,
       },
@@ -284,10 +284,9 @@ export function TradeDialog({
               <img src={imagePreview} alt="Preview chart" />
             ) : (
               <span>
-                <strong>Preview chart</strong>
+                <strong>Chart screenshot (optional)</strong>
                 <em>
-                  Click, paste (⌘V / Ctrl+V), or drop a screenshot — the image
-                  appears here first
+                  Click, paste (⌘V / Ctrl+V), or drop a screenshot
                 </em>
               </span>
             )}
@@ -410,6 +409,17 @@ export function TradeDialog({
                   onChange={(value) => update('exitPrice', value)}
                   maxDecimals={5}
                   placeholder={form.result === 'Pending' ? 'Active' : '0'}
+                  disabled={futureLocked}
+                />
+              </label>
+              <label className="field">
+                <span>Lot</span>
+                <AmountInput
+                  value={form.lot}
+                  onChange={(value) => update('lot', value)}
+                  maxDecimals={2}
+                  placeholder="0.01"
+                  required
                   disabled={futureLocked}
                 />
               </label>
