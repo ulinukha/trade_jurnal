@@ -175,7 +175,8 @@ export function TradeDialog({
         : parseAmountInput(form.exitPrice, 5)
     const lot = parseAmountInput(form.lot, 2)
     const profit =
-      parseAmountInput(form.profit) ?? (form.result === 'Pending' ? 0 : null)
+      parseAmountInput(form.profit) ??
+      (form.result === 'Pending' || form.result === 'Cancel' ? 0 : null)
     const reason = form.reason.trim()
 
     if (entryPrice === null) {
@@ -186,8 +187,12 @@ export function TradeDialog({
       setError('Lot must be greater than 0.')
       return
     }
-    if (form.result !== 'Pending' && exitPrice === null) {
-      setError('Exit price is required unless the result is Pending.')
+    if (
+      form.result !== 'Pending' &&
+      form.result !== 'Cancel' &&
+      exitPrice === null
+    ) {
+      setError('Exit price is required unless the result is Pending or Cancel.')
       return
     }
     if (profit === null) {
@@ -403,12 +408,23 @@ export function TradeDialog({
                 />
               </label>
               <label className="field">
-                <span>Exit {form.result === 'Pending' ? '(optional)' : ''}</span>
+                <span>
+                  Exit{' '}
+                  {form.result === 'Pending' || form.result === 'Cancel'
+                    ? '(optional)'
+                    : ''}
+                </span>
                 <AmountInput
                   value={form.exitPrice}
                   onChange={(value) => update('exitPrice', value)}
                   maxDecimals={5}
-                  placeholder={form.result === 'Pending' ? 'Active' : '0'}
+                  placeholder={
+                    form.result === 'Pending'
+                      ? 'Active'
+                      : form.result === 'Cancel'
+                        ? '—'
+                        : '0'
+                  }
                   disabled={futureLocked}
                 />
               </label>

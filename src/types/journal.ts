@@ -1,6 +1,6 @@
 export const PRESET_PAIRS = ['XAUUSD', 'USA100'] as const
 
-export const TRADE_RESULTS = ['SL', 'TP', 'BE', 'Pending'] as const
+export const TRADE_RESULTS = ['SL', 'TP', 'BE', 'Cancel', 'Pending'] as const
 export type TradeResult = (typeof TRADE_RESULTS)[number]
 
 export const TRADE_SESSIONS = ['Asia', 'London', 'New York', 'Overlap'] as const
