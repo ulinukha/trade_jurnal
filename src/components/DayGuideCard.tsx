@@ -1,11 +1,11 @@
 import { isFutureDate } from '../utils/date'
 import {
   calcDayGuide,
-  formatCurrency,
   formatPercent,
   STOP_LOSS_PCT,
   TARGET_PCT,
 } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
 
 interface DayGuideCardProps {
   selectedDate: string
@@ -18,6 +18,7 @@ export function DayGuideCard({
   baseEquity,
   dailyProfit,
 }: DayGuideCardProps) {
+  const { formatCurrency } = useCurrency()
   const guide = calcDayGuide(baseEquity, dailyProfit)
   const upcoming = isFutureDate(selectedDate)
 

@@ -9,7 +9,7 @@ import { TradeDialog } from './components/TradeDialog'
 import { TradeHistory } from './components/TradeHistory'
 import { firestoreLoadHint } from './lib/firebaseError'
 import { isFirebaseConfigured } from './lib/firebase'
-import { getSettings, saveInitialEquity } from './services/journal'
+import { getSettings, saveCurrency, saveInitialEquity } from './services/journal'
 import { deleteTrade, getAllTrades, saveTrade } from './services/trades'
 import {
   addWithdrawal,
@@ -17,7 +17,14 @@ import {
   getAllWithdrawals,
 } from './services/withdrawals'
 import { PRESET_PAIRS } from './types/journal'
-import type { Trade, TradeInput, Withdrawal, WithdrawalInput } from './types/journal'
+import type {
+  AppCurrency,
+  Trade,
+  TradeInput,
+  Withdrawal,
+  WithdrawalInput,
+} from './types/journal'
+import { CurrencyProvider } from './context/CurrencyContext'
 import { tradesForDate, tradesToDailyEntries } from './utils/aggregate'
 import { todayStr } from './utils/date'
 import './App.css'
@@ -37,6 +44,7 @@ export default function App() {
   const [prefillPair, setPrefillPair] = useState('')
   const [pairFilter, setPairFilter] = useState('all')
   const [initialEquity, setInitialEquity] = useState<number | null>(null)
+  const [currency, setCurrency] = useState<AppCurrency>('USD')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -103,6 +111,7 @@ export default function App() {
 
       if (settingsRes.status === 'fulfilled') {
         setInitialEquity(settingsRes.value?.initialEquity ?? null)
+        setCurrency(settingsRes.value?.currency ?? 'USD')
       }
       if (tradesRes.status === 'fulfilled') {
         setTrades(tradesRes.value)
@@ -175,6 +184,22 @@ export default function App() {
     setFormOpen(true)
     setDetailOpen(false)
   }
+
+  const handleCurrencyChange = useCallback(async (next: AppCurrency) => {
+    setCurrency((prev) => {
+      void (async () => {
+        try {
+          await saveCurrency(next)
+        } catch (err) {
+          console.error(err)
+          setCurrency(prev)
+          setError(firestoreLoadHint(err) || 'Failed to save currency.')
+        }
+      })()
+      return next
+    })
+    setError('')
+  }, [])
 
   async function handleSaveInitialEquity(value: number) {
     setSaving(true)
@@ -268,7 +293,7 @@ export default function App() {
       {loading && <p className="banner">Loading data…</p>}
 
       {!loading && (
-        <>
+        <CurrencyProvider currency={currency} onChange={handleCurrencyChange}>
           <InitialEquitySetup
             initialEquity={initialEquity}
             withdrawals={allWithdrawals}
@@ -348,7 +373,7 @@ export default function App() {
               onEditTrade={handleViewTrade}
             />
           )}
-        </>
+        </CurrencyProvider>
       )}
     </div>
   )

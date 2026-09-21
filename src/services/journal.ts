@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { requireDb } from '../lib/firebase'
-import type { AppSettings } from '../types/journal'
+import type { AppCurrency, AppSettings } from '../types/journal'
+import { parseAppCurrency } from '../utils/currency'
 
 /** Settings tetap di collection lama agar rules Firestore tidak perlu diubah. */
 export const COLLECTION = 'daily_entries'
@@ -11,22 +12,33 @@ export async function getSettings(): Promise<AppSettings | null> {
   if (!snap.exists()) return null
   const data = snap.data()
   const initialEquity = Number(data.initialEquity ?? 0)
-  if (!initialEquity) return null
   return {
-    initialEquity,
+    initialEquity: initialEquity || null,
+    currency: parseAppCurrency(data.currency),
     updatedAt: data.updatedAt ? String(data.updatedAt) : undefined,
   }
 }
 
 export async function saveInitialEquity(
   initialEquity: number,
-): Promise<AppSettings> {
-  const payload: AppSettings = {
-    initialEquity,
-    updatedAt: new Date().toISOString(),
-  }
-  await setDoc(doc(requireDb(), COLLECTION, SETTINGS_ID), payload, {
-    merge: true,
-  })
-  return payload
+): Promise<void> {
+  await setDoc(
+    doc(requireDb(), COLLECTION, SETTINGS_ID),
+    {
+      initialEquity,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  )
+}
+
+export async function saveCurrency(currency: AppCurrency): Promise<void> {
+  await setDoc(
+    doc(requireDb(), COLLECTION, SETTINGS_ID),
+    {
+      currency,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true },
+  )
 }

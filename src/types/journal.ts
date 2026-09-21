@@ -60,8 +60,12 @@ export interface DailyEntry {
   updatedAt?: string
 }
 
+export const APP_CURRENCIES = ['USD', 'CENT', 'IDR'] as const
+export type AppCurrency = (typeof APP_CURRENCIES)[number]
+
 export interface AppSettings {
-  initialEquity: number
+  initialEquity: number | null
+  currency: AppCurrency
   updatedAt?: string
 }
 

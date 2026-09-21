@@ -4,10 +4,10 @@ import {
   calcPeriodSummary,
   calcTotalDeposit,
   calcTotalWithdraw,
-  formatCurrency,
   formatPercent,
 } from '../utils/calc'
 import type { DailyEntry, Withdrawal } from '../types/journal'
+import { useCurrency } from '../context/CurrencyContext'
 
 interface SummaryCardsProps {
   monthEntries: DailyEntry[]
@@ -70,6 +70,7 @@ export function SummaryCards({
   initialEquity,
   withdrawals,
 }: SummaryCardsProps) {
+  const { formatCurrency, label } = useCurrency()
   const allTime = calcPeriodSummary(allEntries)
   const dayEntry = todayEntry ?? selectedEntry
   const day = dayEntry ? calcDailyMetrics(dayEntry) : null
@@ -91,7 +92,7 @@ export function SummaryCards({
             <p className="stat-label">Current Balance</p>
             <p className="stat-value">
               {balance !== null ? formatCurrency(balance) : '—'}
-              {balance !== null && <span className="stat-unit">USD</span>}
+              {balance !== null && <span className="stat-unit">{label}</span>}
             </p>
             <p className="stat-sub">
               {initialEquity !== null
@@ -113,7 +114,7 @@ export function SummaryCards({
               className={`stat-value ${allTime.totalProfit > 0 ? 'is-up' : allTime.totalProfit < 0 ? 'is-down' : ''}`}
             >
               {formatCurrency(allTime.totalProfit)}
-              <span className="stat-unit">USD</span>
+              <span className="stat-unit">{label}</span>
             </p>
             <p className="stat-sub accent">
               {allTime.tradingDays} days · {allTime.totalEntries} trades
@@ -152,7 +153,7 @@ export function SummaryCards({
               className={`stat-value ${todayEntry && todayEntry.dailyProfit > 0 ? 'is-up' : todayEntry && todayEntry.dailyProfit < 0 ? 'is-down' : ''}`}
             >
               {todayEntry ? formatCurrency(todayEntry.dailyProfit) : '—'}
-              {todayEntry && <span className="stat-unit">USD</span>}
+              {todayEntry && <span className="stat-unit">{label}</span>}
             </p>
             <p className="stat-sub">
               {todayEntry

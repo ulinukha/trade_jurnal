@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import type { Trade } from '../types/journal'
 import { SESSION_LABELS } from '../types/journal'
-import { formatCurrency, formatPrice } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
+import { formatPrice } from '../utils/calc'
 
 interface TradeDetailModalProps {
   trade: Trade
@@ -14,6 +15,7 @@ export function TradeDetailModal({
   onClose,
   onEdit,
 }: TradeDetailModalProps) {
+  const { formatCurrency } = useCurrency()
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()

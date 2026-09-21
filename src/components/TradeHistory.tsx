@@ -1,7 +1,8 @@
 import { format } from 'date-fns'
 import type { Trade } from '../types/journal'
 import { SESSION_LABELS } from '../types/journal'
-import { formatCurrency, formatPnL, formatPrice } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
+import { formatPrice } from '../utils/calc'
 
 interface TradeHistoryProps {
   trades: Trade[]
@@ -53,6 +54,7 @@ export function TradeHistory({
   onSelect,
   onAdd,
 }: TradeHistoryProps) {
+  const { formatCurrency, formatPnL, label } = useCurrency()
   const dayTrades = trades.filter((t) => t.date === selectedDate)
   const rows = dayTrades.length > 0 ? dayTrades : trades
   const showingDay = dayTrades.length > 0
@@ -81,7 +83,7 @@ export function TradeHistory({
           </div>
           <div className={`history-chip ${net >= 0 ? 'teal' : 'rose'}`}>
             <strong>{formatPnL(net)}</strong>
-            <span>USD</span>
+            <span>{label}</span>
           </div>
           <button type="button" className="btn primary" onClick={onAdd}>
             + /trade

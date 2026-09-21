@@ -92,6 +92,38 @@ textarea {
   color: #ff8fa0;
 }
 
+.currency-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.18rem;
+  padding: 0.22rem;
+  border-radius: 10px;
+  background: #0f131a;
+  border: 1px solid var(--line);
+}
+
+.currency-toggle-btn {
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0.38rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.currency-toggle-btn.active {
+  background: #1a2029;
+  color: var(--ink);
+}
+
+.currency-toggle-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .capital-panel {
   margin-bottom: 1rem;
 }

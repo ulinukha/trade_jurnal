@@ -7,13 +7,12 @@ import {
   calcNetCashflow,
   cashflowSigned,
   cashflowType,
-  formatCurrency,
   formatPercent,
-  formatPnL,
   formatPrice,
   STOP_LOSS_PCT,
   TARGET_PCT,
 } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
 
 interface DayDetailModalProps {
   date: string
@@ -36,6 +35,7 @@ export function DayDetailModal({
   onAdd,
   onEditTrade,
 }: DayDetailModalProps) {
+  const { formatCurrency, formatPnL } = useCurrency()
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()

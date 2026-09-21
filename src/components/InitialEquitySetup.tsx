@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { format } from 'date-fns'
 import type { Withdrawal, WithdrawalInput } from '../types/journal'
+import { useCurrency } from '../context/CurrencyContext'
 import { formatAmountInput, parseAmountInput } from '../utils/amountInput'
-import { formatCurrency } from '../utils/calc'
-import { WithdrawModal } from './WithdrawModal'
 import { AmountInput } from './AmountInput'
+import { CurrencyToggle } from './CurrencyToggle'
+import { WithdrawModal } from './WithdrawModal'
 
 interface InitialEquitySetupProps {
   initialEquity: number | null
@@ -23,8 +24,9 @@ export function InitialEquitySetup({
   onAddWithdraw,
   onDeleteWithdraw,
 }: InitialEquitySetupProps) {
+  const { formatCurrency, label, decimals, placeholder } = useCurrency()
   const [value, setValue] = useState(
-    initialEquity !== null ? formatAmountInput(initialEquity) : '',
+    initialEquity !== null ? formatAmountInput(initialEquity, decimals) : '',
   )
   const [editing, setEditing] = useState(initialEquity === null)
   const [error, setError] = useState('')
@@ -32,7 +34,7 @@ export function InitialEquitySetup({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const n = parseAmountInput(value)
+    const n = parseAmountInput(value, decimals)
     if (n === null || n <= 0) {
       setError('Starting capital must be greater than 0.')
       return
@@ -52,6 +54,7 @@ export function InitialEquitySetup({
               <h2>{formatCurrency(initialEquity)}</h2>
             </div>
             <div className="panel-header-actions">
+              <CurrencyToggle disabled={saving} />
               <button
                 type="button"
                 className="btn primary"
@@ -66,7 +69,7 @@ export function InitialEquitySetup({
                 type="button"
                 className="btn ghost"
                 onClick={() => {
-                  setValue(formatAmountInput(initialEquity))
+                  setValue(formatAmountInput(initialEquity, decimals))
                   setEditing(true)
                 }}
               >
@@ -101,14 +104,16 @@ export function InitialEquitySetup({
               : 'Edit starting capital'}
           </h2>
         </div>
+        <CurrencyToggle disabled={saving} />
       </div>
       <form className="daily-form" onSubmit={handleSubmit}>
         <label className="field">
-          <span>Starting capital (USD)</span>
+          <span>Starting capital ({label})</span>
           <AmountInput
             value={value}
             onChange={setValue}
-            placeholder="1,000.00"
+            maxDecimals={decimals}
+            placeholder={placeholder}
             required
             autoFocus
           />

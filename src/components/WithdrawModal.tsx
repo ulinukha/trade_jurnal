@@ -9,9 +9,8 @@ import {
   calcTotalWithdraw,
   cashflowSigned,
   cashflowType,
-  formatCurrency,
-  formatPnL,
 } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
 import { AmountInput } from './AmountInput'
 
 interface WithdrawModalProps {
@@ -31,6 +30,8 @@ export function WithdrawModal({
   onSave,
   onDelete,
 }: WithdrawModalProps) {
+  const { formatCurrency, formatPnL, label, decimals, placeholder } =
+    useCurrency()
   const [kind, setKind] = useState<CashflowType>('withdraw')
   const [date, setDate] = useState(defaultDate)
   const [amount, setAmount] = useState('')
@@ -57,7 +58,7 @@ export function WithdrawModal({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    const n = parseAmountInput(amount)
+    const n = parseAmountInput(amount, decimals)
     if (!date) {
       setError('Date is required.')
       return
@@ -150,11 +151,12 @@ export function WithdrawModal({
             />
           </label>
           <label className="field">
-            <span>Amount (USD)</span>
+            <span>Amount ({label})</span>
             <AmountInput
               value={amount}
               onChange={setAmount}
-              placeholder="50.00"
+              maxDecimals={decimals}
+              placeholder={placeholder}
               required
               autoFocus
             />

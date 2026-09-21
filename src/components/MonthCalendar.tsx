@@ -5,8 +5,8 @@ import { buildMonthWeeks, shiftMonth } from '../utils/calendar'
 import {
   calcPeriodSummary,
   formatNumber,
-  formatPnL,
 } from '../utils/calc'
+import { useCurrency } from '../context/CurrencyContext'
 import { isFutureDate, todayStr } from '../utils/date'
 import type { DailyEntry, Withdrawal } from '../types/journal'
 
@@ -96,6 +96,7 @@ export function MonthCalendar({
   onSelectDate,
   onMonthChange,
 }: MonthCalendarProps) {
+  const { formatPnL } = useCurrency()
   const [hideWeekend, setHideWeekend] = useState(true)
   const [year, month] = monthValue.split('-').map(Number)
   const weeks = buildMonthWeeks(year, month, entries, withdrawals)

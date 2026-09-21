@@ -65,15 +65,6 @@ export function calcPeriodSummary(entries: DailyEntry[]): PeriodSummary {
   }
 }
 
-export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
-
 export function formatPercent(value: number): string {
   const sign = value > 0 ? '+' : ''
   return `${sign}${value.toFixed(2)}%`
@@ -162,18 +153,6 @@ export function cashflowByDate(
 }
 
 /** Compact P/L for calendar cells: +$85.40 / -$20.37 */
-export function formatPnL(value: number): string {
-  const abs = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(value))
-  if (value < 0) return `-${abs}`
-  if (value > 0) return `+${abs}`
-  return abs
-}
-
 export const TARGET_PCT = 0.1
 export const STOP_LOSS_PCT = 0.075
 

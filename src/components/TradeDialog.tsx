@@ -14,6 +14,7 @@ import {
 } from '../types/journal'
 import { formatAmountInput, parseAmountInput } from '../utils/amountInput'
 import { isFutureDate, todayStr } from '../utils/date'
+import { useCurrency } from '../context/CurrencyContext'
 import { AmountInput } from './AmountInput'
 
 interface TradeDialogProps {
@@ -53,6 +54,7 @@ export function TradeDialog({
   onSelectDate,
   onClose,
 }: TradeDialogProps) {
+  const { label, decimals, placeholder } = useCurrency()
   const [form, setForm] = useState(emptyForm)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
@@ -73,7 +75,7 @@ export function TradeDialog({
             ? ''
             : formatAmountInput(existing.exitPrice, 5),
         lot: formatAmountInput(existing.lot, 2),
-        profit: formatAmountInput(existing.profit),
+        profit: formatAmountInput(existing.profit, decimals),
         reason: existing.reason,
       })
       setImagePreview(existing.chartImageUrl)
@@ -175,7 +177,7 @@ export function TradeDialog({
         : parseAmountInput(form.exitPrice, 5)
     const lot = parseAmountInput(form.lot, 2)
     const profit =
-      parseAmountInput(form.profit) ??
+      parseAmountInput(form.profit, decimals) ??
       (form.result === 'Pending' || form.result === 'Cancel' ? 0 : null)
     const reason = form.reason.trim()
 
@@ -440,12 +442,13 @@ export function TradeDialog({
                 />
               </label>
               <label className="field">
-                <span>Profit (USD)</span>
+                <span>Profit ({label})</span>
                 <AmountInput
                   allowNegative
                   value={form.profit}
                   onChange={(value) => update('profit', value)}
-                  placeholder="0"
+                  maxDecimals={decimals}
+                  placeholder={placeholder}
                   disabled={futureLocked}
                 />
               </label>
